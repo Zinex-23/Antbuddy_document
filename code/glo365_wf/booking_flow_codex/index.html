@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>GLO365 Booking Mockup</title>
+    <meta
+      name="description"
+      content="Interactive WhatsApp booking mockup for GLO365 with demo controls and booking flow state transitions."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-frame">
+      <aside id="demo-panel" class="demo-panel" aria-label="Demo controls panel"></aside>
+
+      <div class="chat-shell" id="chat-shell" role="application" aria-label="GLO365 booking mockup">
+        <header class="chat-header">
+          <div class="header-group">
+            <button id="back-button" class="icon-button" type="button" aria-label="Go back">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 5.5L9 12l6.5 6.5"/></svg>
+            </button>
+
+            <div class="brand-wrap" aria-label="GLO365 brand">
+              <svg class="brand-svg" viewBox="0 0 182 44" role="img" aria-label="GLO365 logo">
+                <defs>
+                  <linearGradient id="brandGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+                    <stop offset="0%" stop-color="#1F2C73"/>
+                    <stop offset="100%" stop-color="#0A1638"/>
+                  </linearGradient>
+                </defs>
+                <g transform="translate(0 2)">
+                  <rect x="0" y="6" width="32" height="32" rx="10" fill="url(#brandGradient)"/>
+                  <path d="M11 15.5h10.5a4.5 4.5 0 0 1 0 9H11v-9zm2.5 2.3v4.5h8a2.2 2.2 0 0 0 0-4.5h-8z" fill="#FFFFFF"/>
+                  <path d="M20.3 10.4h8.4v2.6h-8.4z" fill="#D7E6FF" opacity="0.85"/>
+                  <path d="M31.5 10.8h3.7v3.3h-3.7zm0 6.5h3.7v3.3h-3.7z" fill="#B9C9FF" opacity="0.9"/>
+                  <text x="46" y="28" font-size="18" font-weight="700" letter-spacing="0.5" fill="#1B1B1F" font-family="Inter, Segoe UI, Arial, sans-serif">GLO365</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <button id="demo-toggle" class="ghost-button" type="button" aria-label="Open demo controls">
+            Demo
+          </button>
+        </header>
+
+        <main id="chat-feed" class="chat-feed" aria-live="polite"></main>
+
+        <div id="action-bar" class="action-bar" aria-live="polite"></div>
+
+        <div class="composer" role="form" aria-label="Message composer">
+          <button id="attach-button" class="composer-icon" type="button" aria-label="Add item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <label class="sr-only" for="composer-input">Message</label>
+          <input
+            id="composer-input"
+            type="text"
+            autocomplete="off"
+            inputmode="text"
+            placeholder="Message"
+          />
+          <button id="send-button" class="send-button" type="button" aria-label="Send message">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L20 4l-4.5 16-3.5-6.5-7-2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="sheet-overlay" class="sheet-overlay hidden" aria-hidden="true">
+      <div class="sheet" id="bottom-sheet" role="dialog" aria-modal="true" aria-label="Booking options panel">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div class="sheet-header">
+          <div>
+            <p id="sheet-kicker" class="sheet-kicker">Available times</p>
+            <h2 id="sheet-title">Select a time</h2>
+          </div>
+          <button id="sheet-close" class="icon-button flat" type="button" aria-label="Close panel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <div id="sheet-body" class="sheet-body"></div>
+        <div class="sheet-footer">
+          <button id="sheet-cta" class="primary-button" type="button">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <template id="message-template">
+      <article class="message-row">
+        <div class="message-bubble"></div>
+      </article>
+    </template>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
