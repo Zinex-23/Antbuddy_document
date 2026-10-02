@@ -3010,12 +3010,12 @@
 
                 <!-- Automation Section -->
                 <div style="display:flex;flex-direction:column;gap:2px;margin:2px 0;">
-                    <button class="nav-item active" id="navItemAutomation" style="color:var(--ink);" onclick="AutomationHub.open('pages')" aria-label="Automation — Danh sách trang">
+                    <button class="nav-item" id="navItemAutomation" style="color:var(--ink);" onclick="toggleAutomationNav()" aria-expanded="false" aria-controls="automationNavChildren" aria-label="Mở hoặc đóng menu Automation">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         <span style="flex:1;text-align:left;">Automation</span>
-                        <span style="font-size:10px;color:var(--muted);">⌃</span>
+                        <span id="automationNavChevron" class="automation-nav-chevron">⌄</span>
                     </button>
-                    <div class="nav-sub-list">
+                    <div class="nav-sub-list" id="automationNavChildren" hidden>
                         <button class="hub-nav-link" onclick="AutomationHub.open('pages')">Danh sách trang</button>
                         <button class="nav-sub-btn active" data-tab="main-menu" onclick="switchTab('main-menu')">Menu chính</button>
                         <button class="nav-sub-btn" data-tab="faq" onclick="switchTab('faq')">Câu hỏi thường gặp</button>
@@ -4481,7 +4481,7 @@
             'faq': {
                 title: 'Câu hỏi thường gặp',
                 subtitle: 'Tạo câu hỏi và chỉ định tin nhắn trả lời để bắt đầu cuộc trò chuyện',
-                actions: `<button class="btn-action btn-action-primary" onclick="publishFaq()">Xuất bản</button>`
+                actions: `<button class="btn-action btn-action-outline" onclick="publishFaq()">Xuất bản FAQ</button>`
             },
             'welcome-message': {
                 title: 'Tin nhắn mở đầu',
@@ -5030,24 +5030,38 @@
             document.getElementById('globalHeaderSubtitle').textContent = meta.subtitle;
             document.getElementById('workspaceScopeHost').innerHTML = workspaceScopeMarkup();
             
+            const publishAllButton = `<button id="publishPageTemplateButton" class="btn-action btn-action-primary" onclick="AutomationHub.publishPageTemplate()">Xuất bản</button>`;
             if (currentActiveTab === 'main-menu') {
                 if (mainMenuViewMode === 'overview') {
-                    document.getElementById('globalHeaderActions').innerHTML = '';
+                    document.getElementById('globalHeaderActions').innerHTML = publishAllButton;
                     return;
                 }
                 const menu = getCurrentMenu();
                 const state = menu ? getMenuState(menu) : { key: 'published', label: 'Đã xuất bản' };
                 const stateClass = state.key === 'published' ? '' : ' dirty';
                 const isDirty = Boolean(menu && dirtyMenuIds.has(menu.id));
+                const canPublish = Boolean(menu && (isDirty || menu.status === 'DRAFT'));
                 const isInvalid = Boolean(menu && validateMenu(menu).length);
                 document.getElementById('globalHeaderActions').innerHTML = `
                     <span class="save-state${stateClass}"><span class="save-state-dot"></span>${state.label}</span>
                     <button id="saveMenuDraftButton" class="btn-action btn-action-outline ${menuRequestInFlight?'btn-loading':''}" onclick="saveMenuDraft()" ${!isDirty||menuRequestInFlight?'disabled':''}>${menuRequestInFlight?'Đang xử lý':'Lưu nháp'}</button>
-                    <button id="publishMenuButton" class="btn-action btn-action-primary" onclick="publishMenu()" ${!isDirty||isInvalid||menuRequestInFlight?'disabled':''} title="${isInvalid?'Hoàn thiện các trường bắt buộc trước khi xuất bản':''}">Xuất bản</button>
+                    <button id="publishMenuButton" class="btn-action btn-action-outline" onclick="publishMenu()" ${!canPublish||isInvalid||menuRequestInFlight?'disabled':''} title="${isInvalid?'Hoàn thiện các trường bắt buộc trước khi xuất bản':''}">Xuất bản mục</button>
+                    ${publishAllButton}
                 `;
             } else {
-                document.getElementById('globalHeaderActions').innerHTML = meta.actions;
+                document.getElementById('globalHeaderActions').innerHTML = `${meta.actions}${publishAllButton}`;
             }
+        }
+
+        function toggleAutomationNav(forceOpen) {
+            const list = document.getElementById('automationNavChildren');
+            const trigger = document.getElementById('navItemAutomation');
+            if (!list || !trigger) return;
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : list.hidden;
+            list.hidden = !shouldOpen;
+            trigger.setAttribute('aria-expanded', String(shouldOpen));
+            trigger.classList.toggle('active', shouldOpen);
+            document.getElementById('automationNavChevron')?.classList.toggle('open', shouldOpen);
         }
 
         function switchTab(tabKey) {
@@ -5652,7 +5666,7 @@
 
         async function publishMenu() {
             const menu = getCurrentMenu();
-            if (!menu || menuRequestInFlight || !dirtyMenuIds.has(menu.id)) return;
+            if (!menu || menuRequestInFlight || (!dirtyMenuIds.has(menu.id) && menu.status !== 'DRAFT')) return;
             menu.name = menu.name.trim();
             menu.items.forEach(item => item.title = item.title.trim());
             const errors = validateMenu(menu);
@@ -5669,6 +5683,7 @@
                 dirtyMenuIds.delete(menu.id);
                 AutomationHub.persist();
                 notify(`Đã xuất bản và đồng bộ "${menu.name}"`);
+                AutomationHub.publishLinkedTemplate('Menu chính');
             } catch (error) { notify(error.message); }
             finally { menuRequestInFlight=false;renderBotcakeProfileTabs();renderMenuContext();renderMenuItemsEditor();updateGlobalHeader(); }
         }
@@ -5841,7 +5856,7 @@
         function publishFaq() {
             const invalid=appData.faqs.find(f=>!f.question?.trim());
             if(invalid) return notify('Không thể xuất bản: có câu hỏi chưa hoàn chỉnh');
-            appData.faqs.forEach(f=>f.status='PUBLISHED'); renderFaqRows(); notify('Đã xuất bản danh sách Câu hỏi thường gặp');
+            appData.faqs.forEach(f=>f.status='PUBLISHED'); renderFaqRows(); AutomationHub.persist(); notify('Đã xuất bản danh sách Câu hỏi thường gặp'); AutomationHub.publishLinkedTemplate('Câu hỏi thường gặp');
         }
 
         function renderFaqPhonePreview() {
@@ -6638,6 +6653,7 @@
                 renderDefaultMessageModule();
                 showFloatingSuccessToast('Đã lưu & áp dụng Tin nhắn mặc định');
                 notify('Đã lưu & áp dụng Tin nhắn mặc định');
+                AutomationHub.publishLinkedTemplate('Tin nhắn mặc định');
             }, 180);
         }
 
@@ -6777,7 +6793,7 @@
         function openCreateKeywordModal() { editingKeywordIndex=null;resetKeywordModal();document.getElementById('keywordModalTitle').textContent='Thêm luật từ khóa';document.getElementById('keywordModal').classList.add('show'); }
         function openEditKeywordModal(idx) { const k=appData.keywords[idx];if(!k)return;editingKeywordIndex=idx;resetKeywordModal();document.getElementById('keywordModalTitle').textContent='Chỉnh sửa luật từ khóa';document.getElementById('keywordNameInput').value=k.name||'';document.getElementById('keywordTermsInput').value=k.keyword||'';document.getElementById('keywordExcludeInput').value=k.excludeTerms||'';document.getElementById('keywordMatchMode').value=k.matchType;document.getElementById('keywordResponseInput').value=k.response||'';document.getElementById('keywordActiveInput').checked=!!k.active;document.getElementById('keywordModal').classList.add('show'); }
         function closeKeywordModal() { document.getElementById('keywordModal').classList.remove('show');editingKeywordIndex=null; }
-        function saveKeywordRule() { const name=document.getElementById('keywordNameInput'),terms=document.getElementById('keywordTermsInput'),response=document.getElementById('keywordResponseInput');[name,terms,response].forEach(el=>el.classList.toggle('invalid',!el.value.trim()));if(!name.value.trim()||!terms.value.trim()||!response.value.trim())return notify('Vui lòng nhập đủ các trường bắt buộc');const data={id:editingKeywordIndex===null?`kw-${Date.now()}`:appData.keywords[editingKeywordIndex].id,name:name.value.trim(),keyword:terms.value.trim(),excludeTerms:document.getElementById('keywordExcludeInput').value.trim(),matchType:document.getElementById('keywordMatchMode').value,response:response.value.trim(),active:document.getElementById('keywordActiveInput').checked,priority:editingKeywordIndex===null?appData.keywords.length+1:appData.keywords[editingKeywordIndex].priority};if(editingKeywordIndex===null)appData.keywords.push(data);else appData.keywords[editingKeywordIndex]=data;closeKeywordModal();renderKeywords();notify('Đã lưu luật từ khóa'); }
+        function saveKeywordRule() { const name=document.getElementById('keywordNameInput'),terms=document.getElementById('keywordTermsInput'),response=document.getElementById('keywordResponseInput');[name,terms,response].forEach(el=>el.classList.toggle('invalid',!el.value.trim()));if(!name.value.trim()||!terms.value.trim()||!response.value.trim())return notify('Vui lòng nhập đủ các trường bắt buộc');const data={id:editingKeywordIndex===null?`kw-${Date.now()}`:appData.keywords[editingKeywordIndex].id,name:name.value.trim(),keyword:terms.value.trim(),excludeTerms:document.getElementById('keywordExcludeInput').value.trim(),matchType:document.getElementById('keywordMatchMode').value,response:response.value.trim(),active:document.getElementById('keywordActiveInput').checked,priority:editingKeywordIndex===null?appData.keywords.length+1:appData.keywords[editingKeywordIndex].priority};if(editingKeywordIndex===null)appData.keywords.push(data);else appData.keywords[editingKeywordIndex]=data;closeKeywordModal();renderKeywords();AutomationHub.persist();notify('Đã lưu luật từ khóa');AutomationHub.publishLinkedTemplate('Từ khóa'); }
         function deleteKeyword(idx) { const k=appData.keywords[idx];if(!k||!confirm(`Xóa luật “${k.name}”?`))return;appData.keywords.splice(idx,1);appData.keywords.forEach((x,i)=>x.priority=i+1);renderKeywords();notify('Đã xóa luật từ khóa'); }
         function normalizeText(text) { return String(text||'').normalize('NFC').toLowerCase().replace(/\s+/g,' ').trim(); }
         function keywordMatches(rule,text) { const normalized=normalizeText(text);const includes=rule.keyword.split(',').map(normalizeText).filter(Boolean);const excludes=String(rule.excludeTerms||'').split(',').map(normalizeText).filter(Boolean);if(excludes.some(t=>normalized.includes(t)))return false;if(rule.matchType==='CONTAINS_ALL')return includes.every(t=>normalized.includes(t));return includes.some(t=>normalized.includes(t)); }
@@ -6790,7 +6806,7 @@
         function createSequence(){const id=`seq-${Date.now()}`;appData.sequences.push({id,name:`Kịch bản mới ${appData.sequences.length+1}`,active:false,subscribers:0,steps:[]});currentSequenceId=id;renderSequences();notify('Đã tạo bản nháp kịch bản');}
         function addSequenceStep(){const s=appData.sequences.find(x=>x.id===currentSequenceId);if(!s)return;s.steps.push({id:`step-${Date.now()}`,delay:1,unit:'DAY',type:'MESSAGE',content:'Nội dung tin nhắn mới'});renderSequences();}
         function toggleCurrentSequence(value){const s=appData.sequences.find(x=>x.id===currentSequenceId);if(!s)return;if(value&&!s.steps.length){document.getElementById('sequenceActiveToggle').checked=false;return notify('Cần ít nhất một bước trước khi bật kịch bản');}s.active=value;renderSequences();}
-        function saveSequence(){const s=appData.sequences.find(x=>x.id===currentSequenceId);if(!s||!s.steps.length)return notify('Kịch bản cần ít nhất một bước');notify(`Đã lưu “${s.name}”`);}
+        function saveSequence(){const s=appData.sequences.find(x=>x.id===currentSequenceId);if(!s||!s.steps.length)return notify('Kịch bản cần ít nhất một bước');AutomationHub.persist();notify(`Đã lưu “${s.name}”`);AutomationHub.publishLinkedTemplate('Kịch bản chăm sóc');}
 
         /* ----------------- RULE CONTROLS ----------------- */
         function automationTargetExists(ref){if(!ref)return true;if(ref.type==='MENU')return appData.menus.some(x=>x.id===ref.targetId);if(ref.type==='SEQUENCE')return appData.sequences.some(x=>x.id===ref.targetId);return true;}
@@ -6802,7 +6818,7 @@
         function addRuleCondition(){const r=appData.rules.find(x=>x.id===currentRuleId);if(!r)return;r.conditions.push('Đã gắn thẻ Khách mới');renderRules();}
         function addRuleAction(){const r=appData.rules.find(x=>x.id===currentRuleId),target=appData.sequences[0];if(!r||!target)return;r.actions.push(`Ghi danh Kịch bản ${target.name}`);r.actionRefs=(r.actionRefs||[]).concat({type:'SEQUENCE',targetId:target.id});renderRules();}
         function toggleCurrentRule(value){const r=appData.rules.find(x=>x.id===currentRuleId);if(!r)return;if(value&&(!r.conditions.length||!r.actions.length||!ruleLinksAreValid(r))){document.getElementById('ruleActiveToggle').checked=false;return notify('Cần điều kiện, hành động và liên kết hợp lệ trước khi bật');}r.active=value;renderRules();}
-        function saveRule(){const r=appData.rules.find(x=>x.id===currentRuleId);if(!r||!r.conditions.length||!r.actions.length||!ruleLinksAreValid(r))return notify('Quy luật chưa hoàn chỉnh hoặc có liên kết hỏng');notify(`Đã lưu “${r.name}”`);}
+        function saveRule(){const r=appData.rules.find(x=>x.id===currentRuleId);if(!r||!r.conditions.length||!r.actions.length||!ruleLinksAreValid(r))return notify('Quy luật chưa hoàn chỉnh hoặc có liên kết hỏng');AutomationHub.persist();notify(`Đã lưu “${r.name}”`);AutomationHub.publishLinkedTemplate('Quy luật');}
 
         function escapeHtml(text) {
             if (!text) return '';

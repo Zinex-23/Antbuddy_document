@@ -7,6 +7,7 @@ window.AutomationHub = (() => {
     const h = value => escapeHtml(String(value ?? ''));
     const copy = value => JSON.parse(JSON.stringify(value));
     let data, seed, tab = 'pages', status = 'active', query = '', platform = 'all', pageNumber = 1, templateCategory = 'builtin';
+    let templateCreationPending = false;
     let selected = new Set(), focusReturn = null, lastScope = null, dialogAction = null;
     const api = { ready:false, isOpen:true, scope:null };
     const pageById = id => data.pages.find(p => p.id === id);
@@ -26,10 +27,15 @@ window.AutomationHub = (() => {
         catch (_) { notify('Không thể lưu dữ liệu vào trình duyệt. Hãy kiểm tra dung lượng lưu trữ.'); return false; }
     }
     function snapshot() {
+        const currentRecord = api.scope && data?.records?.[scopeKey(api.scope)];
+        const origin = currentRecord?.templateOrigin;
+        const managedTemplateId = currentRecord?.managedTemplateId;
         return { app:copy(appData), published:[...menuRepository.publishedVersions.values()].map(copy),
             fallback:copy(persistedDefaultMessage), fallbackDraft:copy(draftDefaultMessage),
             welcome:{ text:document.getElementById('welcomeMsgInput').value, active:document.getElementById('welcomeActiveToggle').checked, reply:document.getElementById('welcomeQuickReplyInput').value },
-            dirtyMenus:[...dirtyMenuIds], dirtyModules:[...moduleDirtyState], fallbackDirty:isDefaultMessageDirty };
+            dirtyMenus:[...dirtyMenuIds], dirtyModules:[...moduleDirtyState], fallbackDirty:isDefaultMessageDirty,
+            ...(origin ? { templateOrigin:copy(origin) } : {}),
+            ...(managedTemplateId ? { managedTemplateId } : {}) };
     }
     function seedPages() {
         return [
@@ -53,7 +59,7 @@ window.AutomationHub = (() => {
         config.published = [];
         config.welcome.text = `👋 Chào mừng bạn đến với ${name}! Chúng tôi có thể hỗ trợ gì cho bạn hôm nay?`;
         config.dirtyMenus = []; config.dirtyModules = []; config.fallbackDirty = false;
-        return { id, name, description, symbol, config, builtin };
+        return { id, name, description, symbol, config, builtin, rootTemplateId:id };
     }
     function seedTemplates() {
         return [
@@ -61,6 +67,104 @@ window.AutomationHub = (() => {
             makeTemplate('template-real-estate','Bất động sản','Kịch bản tư vấn dự án bất động sản, tra cứu bảng giá căn hộ/đất nền và đăng ký tham quan thực tế.','🏢',['Dự án nổi bật','Bảng giá & Chính sách','Đặt lịch tham quan'],true),
             makeTemplate('template-cosmetics','Cửa hàng mĩ phẩm','Kịch bản tư vấn mỹ phẩm, các bước chăm sóc da theo liệu trình và combo làm đẹp cá nhân.','💄',['Sản phẩm dưỡng da','Bảng giá & Combo hot','Tư vấn soi da & Makeup'],false)
         ];
+    }
+    function makeTemplateVariant(template, pageId, variant) {
+        const config = copy(templateSnapshot(template));
+        const menu = config.app.menus[0];
+        const isBeauty = variant === 'beauty';
+        const now = '2026-10-01T09:00:00+07:00';
+        const variantData = isBeauty ? {
+            label:'Biến thể mỹ phẩm',
+            summary:'Đổi nội dung sang tư vấn da, combo mỹ phẩm và đặt lịch soi da.',
+            welcome:'✨ Chào bạn đến với Beauty Corner! Bạn muốn soi da, tìm sản phẩm hay xem combo hôm nay?',
+            reply:'Soi da miễn phí',
+            fallback:'Mình chưa xác định được nhu cầu của bạn. Bạn có thể chọn loại da, sản phẩm quan tâm hoặc để lại số điện thoại nhé.',
+            menu:[
+                ['Soi da & tư vấn routine','Mình sẽ hỏi 3 câu ngắn để xác định loại da và routine phù hợp cho bạn.'],
+                ['Combo bán chạy','Beauty Corner đang có combo làm sạch, phục hồi và chống nắng theo từng loại da.'],
+                ['Đặt lịch tại spa','Bạn muốn đặt lịch tại chi nhánh nào và khung giờ nào?']
+            ],
+            faqs:[
+                ['Da nhạy cảm nên dùng sản phẩm nào?','Ưu tiên công thức dịu nhẹ, không hương liệu và thử trước trên vùng da nhỏ.'],
+                ['Có soi da miễn phí không?','Có. Bạn có thể soi da online hoặc đặt lịch miễn phí tại cửa hàng.'],
+                ['Bao lâu thì giao hàng?','Nội thành giao trong 2–4 giờ; các tỉnh từ 2–4 ngày làm việc.'],
+                ['Sản phẩm có được đổi trả không?','Hỗ trợ đổi trong 7 ngày nếu sản phẩm còn nguyên tem và chưa sử dụng.']
+            ],
+            keywords:[['Hỏi routine','routine, chăm sóc da, da dầu','Mình sẽ tư vấn routine theo loại da và ngân sách của bạn.'],['Đặt lịch soi da','soi da, đặt lịch spa','Bạn cho mình chi nhánh và thời gian mong muốn nhé.']],
+            sequence:['Chăm sóc sau tư vấn da','Sau 3 ngày, bot hỏi phản hồi về routine và nhắc cách sử dụng đúng.'],
+            rule:'Khách yêu cầu soi da → ghi danh chăm sóc sau tư vấn'
+        } : {
+            label:'Biến thể nội thất',
+            summary:'Đổi nội dung sang tư vấn không gian, dự toán và đặt lịch khảo sát.',
+            welcome:'🏠 Chào mừng bạn đến với Home Decor! Bạn cần thiết kế căn hộ, nhà phố hay một phòng riêng?',
+            reply:'Nhận tư vấn thiết kế',
+            fallback:'Mình chưa rõ loại không gian bạn cần thiết kế. Hãy cho biết diện tích, phong cách và ngân sách dự kiến nhé.',
+            menu:[
+                ['Xem bộ sưu tập thiết kế','Bạn thích phong cách Hiện đại, Japandi, Indochine hay Tối giản?'],
+                ['Nhận dự toán sơ bộ','Vui lòng gửi diện tích, loại không gian và mức đầu tư dự kiến.'],
+                ['Đặt lịch khảo sát','Bạn cho mình địa chỉ công trình và khung giờ thuận tiện nhé.']
+            ],
+            faqs:[
+                ['Chi phí thiết kế tính thế nào?','Chi phí được tính theo diện tích và phạm vi thiết kế; báo giá chi tiết sau khi nhận mặt bằng.'],
+                ['Thời gian thi công bao lâu?','Căn hộ tiêu chuẩn thường mất 30–45 ngày tùy phạm vi và vật liệu.'],
+                ['Có nhận thi công trọn gói không?','Có, Home Decor nhận thiết kế, sản xuất và thi công hoàn thiện trọn gói.'],
+                ['Khảo sát có mất phí không?','Khảo sát nội thành miễn phí khi khách đặt lịch tư vấn dự án.']
+            ],
+            keywords:[['Hỏi dự toán','dự toán, báo giá, chi phí','Bạn gửi diện tích và phong cách để mình lập dự toán sơ bộ nhé.'],['Đặt lịch khảo sát','khảo sát, đo đạc, đặt lịch','Bạn cho mình địa chỉ công trình và thời gian thuận tiện.']],
+            sequence:['Theo dõi khách nhận dự toán','Sau 2 ngày, bot hỏi phản hồi về dự toán và đề nghị đặt lịch khảo sát.'],
+            rule:'Khách nhận dự toán → ghi danh theo dõi dự án'
+        };
+
+        menu.updatedAt = now;
+        menu.status = 'DRAFT';
+        menu.items = variantData.menu.map(([title,text],index)=>({
+            id:`demo-${variant}-${index+1}`, title, order:index+1,
+            action:{type:'NEW_MESSAGE',text}, shouldSwitchMenu:false, targetMenuId:null
+        }));
+        config.app.faqs = variantData.faqs.map(([question,text],index)=>({
+            id:`demo-${variant}-faq-${index+1}`, question, status:'DRAFT', action:{type:'NEW_MESSAGE',text}
+        }));
+        config.app.keywords = variantData.keywords.map(([name,keyword,response],index)=>({
+            id:`demo-${variant}-kw-${index+1}`, name, keyword, excludeTerms:'', matchType:'CONTAINS_ANY', response, active:false, priority:index+1
+        }));
+        config.app.sequences = [{ id:`demo-${variant}-seq`, name:variantData.sequence[0], active:false, subscribers:0, steps:[
+            {id:`demo-${variant}-step`,delay:isBeauty?3:2,unit:'DAY',type:'MESSAGE',content:variantData.sequence[1]}
+        ] }];
+        config.app.rules = [{ id:`demo-${variant}-rule`,name:variantData.rule,active:false,mode:'ALL',conditions:['Khách đã nhận tư vấn'],actions:[`Ghi danh ${variantData.sequence[0]}`],actionRefs:[{type:'SEQUENCE',targetId:`demo-${variant}-seq`}] }];
+        config.welcome = {text:variantData.welcome,active:false,reply:variantData.reply};
+        config.fallback = {...copy(config.fallback),active:false,text:variantData.fallback};
+        config.fallbackDraft = copy(config.fallback);
+        // Applying/customizing a template only replaces the draft. The live version remains intact.
+        config.published = copy(seed.published || []);
+        config.dirtyMenus = [menu.id];
+        config.dirtyModules = ['welcome-message','faq','keywords','sequences','rules'];
+        config.fallbackDirty = true;
+        config.templateOrigin = {
+            templateId:template.id, templateName:template.name, pageId, variantLabel:variantData.label,
+            summary:variantData.summary, customizedAt:now,
+            changedAreas:['Menu chính','Tin nhắn mở đầu','Tin nhắn mặc định','FAQ','Từ khóa','Kịch bản','Quy luật']
+        };
+        return config;
+    }
+    function ensureTemplateVariantDemo() {
+        if (data.demoTemplateVariantVersion >= 2) return;
+        const template = data.templates.find(t=>t.id==='template-shop-online');
+        if (!template) return;
+        let beauty = pageById('page-beauty'), home = pageById('page-home');
+        if (!beauty) {
+            beauty = {id:'page-beauty',name:'Beauty Corner',description:'',channel:'Instagram',color:'#f43f75',connected:true,externalId:'ig_9283647102938456',initials:'BC',handle:'ig_9283647102938456',enabled:true,hidden:false,pinned:false};
+            data.pages.push(beauty);
+        }
+        if (!home) {
+            home = {id:'page-home',name:'Home Decor',description:'',channel:'Facebook',color:'#475569',connected:true,externalId:'fb_3847562910384756',initials:'HD',handle:'fb_3847562910384756',enabled:true,hidden:false,pinned:false};
+            data.pages.push(home);
+        }
+        data.records['page:page-beauty'] = makeTemplateVariant(template,'page-beauty','beauty');
+        data.records['page:page-home'] = makeTemplateVariant(template,'page-home','home');
+        beauty.description = 'Mỹ phẩm · Biến thể từ mẫu Shop online';
+        home.description = 'Nội thất · Biến thể từ mẫu Shop online';
+        data.demoTemplateVariantVersion = 2;
+        save();
     }
     api.init = () => {
         seed = snapshot(); seed.dirtyMenus = []; seed.dirtyModules = []; seed.fallbackDirty = false;
@@ -84,6 +188,7 @@ window.AutomationHub = (() => {
             });
             save();
         }
+        ensureTemplateVariantDemo();
         workspaceData.pages = data.pages; workspaceData.groups = data.groups;
         workspaceData.activePageId = data.pages[0].id;
         api.ready = true;
@@ -109,6 +214,87 @@ window.AutomationHub = (() => {
         if (!api.ready || !api.scope) return;
         data.records[scopeKey(api.scope)] = snapshot();
         save();
+    };
+    api.publishLinkedTemplate = (moduleName, forceCreate = false) => {
+        if (!api.ready || !api.scope) return null;
+        if (!forceCreate) return null;
+        api.persist();
+        const key = scopeKey(api.scope);
+        const record = data.records[key];
+        let template = data.templates.find(t=>t.id===record?.managedTemplateId);
+        const nextSnapshot = copy(record);
+        delete nextSnapshot.managedTemplateId;
+        delete nextSnapshot.templateOrigin;
+        nextSnapshot.app.userMenuAssignments = [];
+        if (!template && api.scope.type === 'page') {
+            const page = pageById(api.scope.id);
+            if (!page) return null;
+            const parentId = record?.templateOrigin?.templateId && data.templates.some(t=>t.id===record.templateOrigin.templateId)
+                ? record.templateOrigin.templateId : null;
+            const root = data.templates.find(t=>t.id===parentId);
+            const baseName = `Mẫu ${page.name}`;
+            let name = baseName, suffix = 2;
+            while (data.templates.some(t=>t.name.trim().toLowerCase()===name.toLowerCase())) name = `${baseName} ${suffix++}`;
+            const templateId = uid('template'), versionId = uid('tplv'), createdAt = new Date().toISOString();
+            template = {
+                id:templateId, organizationId:'org-antbuddy-default', name, nameNormalized:name.toLowerCase(),
+                description:`Cấu hình Automation của ${page.name}`, symbol:'📦',
+                parentTemplateId:parentId, rootTemplateId:root?.rootTemplateId || parentId,
+                sourcePageId:page.id, sourceChannel:page.channel, managedScopeKey:key,
+                ownerId:'user-admin', status:'ACTIVE', builtin:false,
+                versions:[{id:versionId,versionNo:1,status:'READY',snapshot:nextSnapshot,dependencies:[],contentHash:`hash-${crypto.randomUUID().slice(0,8)}`,createdBy:'Quản trị viên',createdAt,publishedModule:moduleName}],
+                currentVersionId:versionId, config:nextSnapshot, runs:[], updatedAt:createdAt, lastPublishedModule:moduleName
+            };
+            record.managedTemplateId = templateId;
+            data.templates.push(template);
+            templateCreationPending = false;
+            save();
+            api.showEditor();
+            notify(`Đã tạo mẫu "${name}" từ ${page.name} và lưu phiên bản v1.`);
+            return {templateId,templateName:name,versionNo:1};
+        }
+        if (!template || template.status === 'ARCHIVED') return null;
+        const currentSnapshot = templateSnapshot(template);
+        if (JSON.stringify(currentSnapshot) === JSON.stringify(nextSnapshot)) return null;
+        const versionNo = Math.max(0,...(template.versions||[]).map(v=>Number(v.versionNo)||0)) + 1;
+        const version = {
+            id:uid('tplv'), versionNo, status:'READY', snapshot:nextSnapshot, dependencies:[],
+            contentHash:`hash-${crypto.randomUUID().slice(0,8)}`,
+            createdBy:'Quản trị viên', createdAt:new Date().toISOString(), publishedModule:moduleName
+        };
+        template.versions ||= [];
+        template.versions.push(version);
+        template.currentVersionId = version.id;
+        template.config = nextSnapshot;
+        template.updatedAt = version.createdAt;
+        template.lastPublishedModule = moduleName;
+        save();
+        notify(`Đã cập nhật mẫu "${template.name}" lên v${versionNo} từ ${moduleName}.`);
+        return {templateId:template.id,templateName:template.name,versionNo};
+    };
+    api.publishPageTemplate = () => {
+        if (!api.ready || !api.scope) return notify('Vui lòng chọn một trang Automation trước khi xuất bản.');
+        if (api.scope.type !== 'page') return notify('Hãy mở một trang cụ thể để xuất bản thành mẫu của trang.');
+        api.persist();
+        const key = scopeKey(api.scope), record = data.records[key], page = pageById(api.scope.id);
+        if (!record || !page) return notify('Không tìm thấy cấu hình trang để xuất bản.');
+        const beforeTemplate = data.templates.find(t=>t.id===record.managedTemplateId);
+        const beforeVersion = beforeTemplate?.versions?.length || 0;
+        const result = api.publishLinkedTemplate('Toàn bộ cấu hình trang',true);
+        const template = data.templates.find(t=>t.id===(result?.templateId || record.managedTemplateId));
+        data.publishLogs ||= [];
+        data.publishLogs.unshift({
+            id:uid('publish-log'), pageId:page.id, pageName:page.name, templateId:template?.id || null,
+            templateName:template?.name || null, versionNo:result?.versionNo || template?.versions?.at(-1)?.versionNo || null,
+            module:'ALL_AUTOMATION', config:copy(templateSnapshot(template) || record),
+            counts:{menus:record.app?.menus?.length||0,faqs:record.app?.faqs?.length||0,keywords:record.app?.keywords?.length||0,sequences:record.app?.sequences?.length||0,rules:record.app?.rules?.length||0},
+            publishedBy:'Quản trị viên', publishedAt:new Date().toISOString()
+        });
+        data.publishLogs = data.publishLogs.slice(0,100);
+        save();
+        if (!result && template) notify(`Đã ghi log xuất bản toàn bộ cấu hình ${page.name}; mẫu không đổi nên giữ nguyên v${beforeVersion}.`);
+        api.showEditor();
+        return {templateId:template?.id,versionNo:result?.versionNo || beforeVersion};
     };
     function restore(config) {
         appData = copy(config.app);
@@ -138,6 +324,7 @@ window.AutomationHub = (() => {
     }
     api.open = (nextTab = tab) => {
         if (!canNavigate()) return;
+        if (nextTab !== 'pages') templateCreationPending = false;
         api.persist(); if (api.scope) lastScope = {...api.scope};
         api.scope = null; api.isOpen = true; tab = nextTab;
         closeMenuItemEditor(); closeWorkspaceSwitcher(); closeAccountMenu();
@@ -180,7 +367,12 @@ window.AutomationHub = (() => {
         if (navTemplates) navTemplates.classList.remove('active');
         const bar = document.getElementById('automationScopeBar'); bar.hidden = false;
         const scope = api.scope, group = scope.type === 'group' ? groupById(scope.id) : groupForPage(scope.id);
-        bar.innerHTML = `<button onclick="AutomationHub.open('pages')">← Danh sách trang</button><span class="hub-scope-detail"><strong>${h(scopeName(scope))}</strong> · ${scope.type === 'group' ? `${group.pageIds.length} trang trong nhóm` : h(pageById(scope.id).channel)}${group?.autoSync ? ' · Cấu hình dùng chung' : ' · Cấu hình riêng'}</span>${data.templateBackups?.[scopeKey(scope)]?'<button onclick="AutomationHub.restoreTemplateBackup()">Khôi phục trước mẫu</button>':''}${scope.type==='group'&&!group.autoSync?'<button onclick="AutomationHub.sync()">Đồng bộ nhóm</button>':''}<button onclick="AutomationHub.saveTemplate()">Lưu thành mẫu</button>`;
+        const scopeRecord = data.records[scopeKey(scope)];
+        const managedTemplate = data.templates.find(t=>t.id===scopeRecord?.managedTemplateId);
+        const origin = scopeRecord?.templateOrigin;
+        const pendingLabel = templateCreationPending && scope.type === 'page' && !managedTemplate
+            ? ' · <mark class="hub-template-origin">Mẫu mới · Lưu/Xuất bản để tạo mẫu</mark>' : '';
+        bar.innerHTML = `<button onclick="AutomationHub.open('pages')">← Danh sách trang</button><span class="hub-scope-detail"><strong>${h(scopeName(scope))}</strong> · ${scope.type === 'group' ? `${group.pageIds.length} trang trong nhóm` : h(pageById(scope.id).channel)}${group?.autoSync ? ' · Cấu hình dùng chung' : ' · Cấu hình riêng'}${managedTemplate ? ` · <mark class="hub-template-origin">Đang cấu hình mẫu: ${h(managedTemplate.name)}</mark>` : pendingLabel || (origin ? ` · <mark class="hub-template-origin">${h(origin.variantLabel)} từ ${h(origin.templateName)}</mark>` : '')}</span>${data.templateBackups?.[scopeKey(scope)]?'<button onclick="AutomationHub.restoreTemplateBackup()">Khôi phục trước mẫu</button>':''}${scope.type==='group'&&!group.autoSync?'<button onclick="AutomationHub.sync()">Đồng bộ nhóm</button>':''}${managedTemplate?`<button onclick="AutomationHub.previewTemplate('${managedTemplate.id}')">Xem mẫu</button>`:''}`;
         document.getElementById('activePageName').textContent = scopeName(scope);
         document.getElementById('activePageMeta').textContent = scope.type === 'group' ? `Nhóm · ${group.pageIds.length} trang` : pageById(scope.id).channel;
         const item = scope.type === 'group' ? group : pageById(scope.id);
@@ -196,6 +388,7 @@ window.AutomationHub = (() => {
         api.persist(); api.scope = {type,id}; lastScope = {...api.scope};
         workspaceData.activePageId = type === 'page' ? id : item.pageIds[0];
         const key = scopeKey(api.scope);
+        if (data.records[key]?.managedTemplateId) templateCreationPending = false;
         restore(data.records[key] || seed);
         closeWorkspaceSwitcher(); closeAccountMenu();
         api.showEditor(); switchTab('main-menu');
@@ -217,7 +410,12 @@ window.AutomationHub = (() => {
         };
         const currentTitle = titles[tab] || titles.pages;
         const breadcrumb = tab === 'templates' ? 'Mẫu' : 'Automation';
-        document.getElementById('automationHub').innerHTML = `<div class="hub-breadcrumb">${breadcrumb}</div><div class="hub-heading"><div><h1>${currentTitle[0]}</h1><p>${currentTitle[1]}</p></div></div><div class="hub-panel"><div class="hub-toolbar">${tab === 'pages' ? `<select aria-label="Nền tảng" onchange="AutomationHub.filter('platform',this.value)"><option value="all">Nền tảng: Tất cả</option>${platforms.map(p=>`<option ${platform===p?'selected':''}>${p}</option>`).join('')}</select>` : ''}<input id="hubSearch" aria-label="Tìm kiếm danh sách" placeholder="${tab === 'pages' ? '⌕  Tìm kiếm trang, ID...' : tab === 'groups' ? '⌕  Tìm nhóm trang...' : '⌕  Tìm mẫu Automation...'}" value="${h(query)}" oninput="AutomationHub.filter('query',this.value)"><button class="hub-primary" onclick="AutomationHub.${tab === 'pages' ? 'connect()' : tab === 'groups' ? 'editGroup()' : 'openTemplateWizard()'}">＋ ${tab === 'pages' ? 'Kết nối' : tab === 'groups' ? 'Tạo nhóm' : 'Tạo mẫu'}</button></div><div id="hubContent"></div></div>`;
+        const primaryAction = tab === 'pages'
+            ? '<button class="hub-primary" onclick="AutomationHub.connect()">＋ Kết nối</button>'
+            : tab === 'groups'
+                ? '<button class="hub-primary" onclick="AutomationHub.editGroup()">＋ Tạo nhóm</button>'
+                : '<button class="hub-primary" onclick="AutomationHub.beginTemplateCreation()">＋ Tạo mẫu</button>';
+        document.getElementById('automationHub').innerHTML = `<div class="hub-breadcrumb">${breadcrumb}</div><div class="hub-heading"><div><h1>${currentTitle[0]}</h1><p>${currentTitle[1]}</p></div></div><div class="hub-panel"><div class="hub-toolbar">${tab === 'pages' ? `<select aria-label="Nền tảng" onchange="AutomationHub.filter('platform',this.value)"><option value="all">Nền tảng: Tất cả</option>${platforms.map(p=>`<option ${platform===p?'selected':''}>${p}</option>`).join('')}</select>` : ''}<input id="hubSearch" aria-label="Tìm kiếm danh sách" placeholder="${tab === 'pages' ? '⌕  Tìm kiếm trang, ID...' : tab === 'groups' ? '⌕  Tìm nhóm trang...' : '⌕  Tìm mẫu Automation...'}" value="${h(query)}" oninput="AutomationHub.filter('query',this.value)">${primaryAction}</div><div id="hubContent"></div></div>`;
         renderContent();
     }
     function renderContent() {
@@ -232,9 +430,15 @@ window.AutomationHub = (() => {
         const rows = filteredPages(), pages = Math.max(1,Math.ceil(rows.length/6)); pageNumber = Math.min(pageNumber,pages);
         const visible = rows.slice((pageNumber-1)*6,pageNumber*6);
         const count = key => data.pages.filter(p => key === 'hidden' ? p.hidden : !p.hidden && p.connected === (key === 'active')).length;
-        content.innerHTML = `<div class="hub-status-tabs">${[['active','Kích hoạt'],['inactive','Chưa kích hoạt'],['hidden','Đã ẩn']].map(([key,label])=>`<button class="${status===key?'active':''}" onclick="AutomationHub.filter('status','${key}')">${label}<b>${count(key)}</b></button>`).join('')}</div>${selected.size ? `<div class="hub-bulk"><strong>Đã chọn ${selected.size} trang</strong><button onclick="AutomationHub.editGroup()">Tạo nhóm từ trang đã chọn</button><button onclick="AutomationHub.bulkHidden()">${status==='hidden'?'Hiện lại':'Ẩn trang'}</button><button onclick="AutomationHub.clearSelection()">Bỏ chọn</button></div>` : ''}<div class="hub-table-scroll"><table class="hub-table"><thead><tr><th><input id="hubSelectAll" type="checkbox" aria-label="Chọn tất cả trang đang hiển thị" ${visible.length && visible.every(p=>selected.has(p.id))?'checked':''} onchange="AutomationHub.selectAll(this.checked)"></th><th>TRANG</th><th>NỀN TẢNG</th><th>PAGE ID</th><th>TRẠNG THÁI</th><th>THAO TÁC</th></tr></thead><tbody>${visible.map(p=>`<tr class="${selected.has(p.id)?'selected':''}"><td><input type="checkbox" aria-label="Chọn ${h(p.name)}" ${selected.has(p.id)?'checked':''} onchange="AutomationHub.select('${p.id}',this.checked)"></td><td><button class="hub-page-link" onclick="AutomationHub.enter('page','${p.id}')" ${!p.connected || p.hidden ? 'disabled':''}>${avatar(p)}<span><strong>${h(p.name)}${p.pinned?' · ⌖':''}</strong><small>${h(p.description)}</small></span></button></td><td>${platformBadge(p)}</td><td><span class="hub-page-id">${h(p.externalId)}</span></td><td>${p.connected ? `<label class="toggle-control"><input type="checkbox" aria-label="Bật Automation ${h(p.name)}" ${p.enabled?'checked':''} onchange="AutomationHub.togglePage('${p.id}',this.checked)"><span class="toggle-track"></span></label>` : `<button class="hub-secondary" onclick="AutomationHub.activate('${p.id}')">Kích hoạt</button>`}</td><td><div class="hub-row-actions"><button onclick="AutomationHub.hidePage('${p.id}')">${p.hidden?'Hiện':'Ẩn'}</button><button class="${p.pinned?'pinned':''}" onclick="AutomationHub.pinPage('${p.id}')">${p.pinned?'Bỏ ghim':'Ghim'}</button></div></td></tr>`).join('')}</tbody></table></div>${!visible.length?'<div class="hub-empty"><strong>Không tìm thấy trang</strong>Thử đổi từ khóa, nền tảng hoặc trạng thái.</div>':''}<div class="hub-pagination"><button ${pageNumber===1?'disabled':''} onclick="AutomationHub.paginate(${pageNumber-1})">Trước</button>${Array.from({length:pages},(_,i)=>`<button class="${i+1===pageNumber?'current':''}" onclick="AutomationHub.paginate(${i+1})">${i+1}</button>`).join('')}<button ${pageNumber===pages?'disabled':''} onclick="AutomationHub.paginate(${pageNumber+1})">Sau</button><span>${rows.length} trang · Chọn tên trang để mở Menu chính</span></div>`;
+        const pageRows = visible.map(p=>{
+            const managedTemplate = data.templates.find(t=>t.id===data.records[scopeKey({type:'page',id:p.id})]?.managedTemplateId);
+            const rowClass = selected.has(p.id)?'selected':'';
+            const actionButtons = `${managedTemplate?`<button class="hub-template-customize" onclick="AutomationHub.enter('page','${p.id}')">Tùy chỉnh mẫu</button>`:''}<button onclick="AutomationHub.hidePage('${p.id}')">${p.hidden?'Hiện':'Ẩn'}</button><button class="${p.pinned?'pinned':''}" onclick="AutomationHub.pinPage('${p.id}')">${p.pinned?'Bỏ ghim':'Ghim'}</button>`;
+            return `<tr class="${rowClass}"><td><input type="checkbox" aria-label="Chọn ${h(p.name)}" ${selected.has(p.id)?'checked':''} onchange="AutomationHub.select('${p.id}',this.checked)"></td><td><button class="hub-page-link" onclick="AutomationHub.enter('page','${p.id}')" ${!p.connected || p.hidden ? 'disabled':''}>${avatar(p)}<span><strong>${h(p.name)}${p.pinned?' · ⌖':''}</strong><small>${managedTemplate?`Đang cấu hình mẫu: ${h(managedTemplate.name)}`:h(p.description)}</small></span></button></td><td>${platformBadge(p)}</td><td><span class="hub-page-id">${h(p.externalId)}</span></td><td>${p.connected ? `<label class="toggle-control"><input type="checkbox" aria-label="Bật Automation ${h(p.name)}" ${p.enabled?'checked':''} onchange="AutomationHub.togglePage('${p.id}',this.checked)"><span class="toggle-track"></span></label>` : `<button class="hub-secondary" onclick="AutomationHub.activate('${p.id}')">Kích hoạt</button>`}</td><td><div class="hub-row-actions">${actionButtons}</div></td></tr>`;
+        }).join('');
+        content.innerHTML = `<div class="hub-status-tabs">${[['active','Kích hoạt'],['inactive','Chưa kích hoạt'],['hidden','Đã ẩn']].map(([key,label])=>`<button class="${status===key?'active':''}" onclick="AutomationHub.filter('status','${key}')">${label}<b>${count(key)}</b></button>`).join('')}</div>${selected.size ? `<div class="hub-bulk"><strong>Đã chọn ${selected.size} trang</strong><button onclick="AutomationHub.editGroup()">Tạo nhóm từ trang đã chọn</button><button onclick="AutomationHub.bulkHidden()">${status==='hidden'?'Hiện lại':'Ẩn trang'}</button><button onclick="AutomationHub.clearSelection()">Bỏ chọn</button></div>` : ''}<div class="hub-table-scroll"><table class="hub-table"><thead><tr><th><input id="hubSelectAll" type="checkbox" aria-label="Chọn tất cả trang đang hiển thị" ${visible.length && visible.every(p=>selected.has(p.id))?'checked':''} onchange="AutomationHub.selectAll(this.checked)"></th><th>TRANG</th><th>NỀN TẢNG</th><th>PAGE ID</th><th>TRẠNG THÁI</th><th>THAO TÁC</th></tr></thead><tbody>${pageRows}</tbody></table></div>${!visible.length?'<div class="hub-empty"><strong>Không tìm thấy trang</strong>Thử đổi từ khóa, nền tảng hoặc trạng thái.</div>':''}<div class="hub-pagination"><button ${pageNumber===1?'disabled':''} onclick="AutomationHub.paginate(${pageNumber-1})">Trước</button>${Array.from({length:pages},(_,i)=>`<button class="${i+1===pageNumber?'current':''}" onclick="AutomationHub.paginate(${i+1})">${i+1}</button>`).join('')}<button ${pageNumber===pages?'disabled':''} onclick="AutomationHub.paginate(${pageNumber+1})">Sau</button><span>${rows.length} trang · Chọn tên trang để mở Menu chính</span></div>`;
         const all = document.getElementById('hubSelectAll');
-        all.indeterminate = visible.some(p=>selected.has(p.id)) && !visible.every(p=>selected.has(p.id));
+        if (all) all.indeterminate = visible.some(p=>selected.has(p.id)) && !visible.every(p=>selected.has(p.id));
     }
     api.paginate = n => { pageNumber = n; renderContent(); };
     api.select = (id,on) => { on ? selected.add(id) : selected.delete(id); renderContent(); };
@@ -272,7 +476,7 @@ window.AutomationHub = (() => {
                 <select aria-label="Trạng thái mẫu" onchange="AutomationHub.switchTemplateStatusFilter(this.value)">
                     <option value="all" ${templateStatusFilter==='all'?'selected':''}>Trạng thái: Tất cả</option>
                     <option value="ACTIVE" ${templateStatusFilter==='ACTIVE'?'selected':''}>Đang hoạt động</option>
-                    <option value="ARCHIVED" ${templateStatusFilter==='ARCHIVED'?'selected':''}>Đã lưu trữ</option>
+                    <option value="ARCHIVED" ${templateStatusFilter==='ARCHIVED'?'selected':''}>Đã ngừng sử dụng</option>
                 </select>
                 <select aria-label="Kênh nguồn mẫu" onchange="AutomationHub.switchTemplateChannelFilter(this.value)">
                     <option value="all" ${templateChannelFilter==='all'?'selected':''}>Kênh: Tất cả</option>
@@ -281,30 +485,37 @@ window.AutomationHub = (() => {
             </div>
             ${filtered.length ? `
                 <div class="hub-cards">
-                    ${filtered.map(t => { const snap=templateSnapshot(t); const menuItems=(snap.app?.menus||[]).reduce((sum,m)=>sum+(m.items?.length||0),0); return `
+                    ${filtered.map(t => { const snap=templateSnapshot(t); const menuItems=(snap.app?.menus||[]).reduce((sum,m)=>sum+(m.items?.length||0),0); const parent=data.templates.find(x=>x.id===t.parentTemplateId); const usedPages=data.pages.filter(p=>{const record=data.records[scopeKey({type:'page',id:p.id})];return record?.managedTemplateId===t.id||record?.templateOrigin?.templateId===t.id;}); const usedPageLabel=usedPages.length?`${usedPages.slice(0,2).map(p=>p.name).join(' · ')}${usedPages.length>2?` · +${usedPages.length-2} trang`:''}`:'Chưa có trang sử dụng'; return `
                         <article class="hub-card">
                             <div class="hub-template-art">
-                                <span>${h(t.symbol || '▦')}</span>
-                                <div class="hub-template-lines"><i></i><i></i><i></i></div>
+                                <span class="hub-template-symbol">${h(t.symbol || '▦')}</span>
+                                <div class="hub-template-art-info">
+                                    <span class="hub-template-tag ${t.builtin ? 'tag-builtin' : 'tag-mine'}">${t.builtin ? 'MẪU HỆ THỐNG' : 'MẪU CỦA TÔI'}</span>
+                                    <h2>${h(t.name)}</h2>
+                                    <span class="hub-template-used" title="${h(usedPages.map(p=>p.name).join(', '))}">${h(usedPageLabel)}</span>
+                                </div>
                             </div>
                             <div class="hub-card-body">
-                                <span class="hub-template-tag ${t.builtin ? 'tag-builtin' : 'tag-mine'}">
-                                    ${t.builtin ? 'MẪU SẴN CÓ' : 'MẪU CỦA TÔI'}
-                                </span>
-                                <h2>${h(t.name)}</h2>
                                 <p>${h(t.description)}</p>
+                                <div class="hub-template-lineage"><span>Mẫu gốc</span><strong>${h(t.builtin ? `${t.name} · Hệ thống` : parent?.name || 'Chưa xác định')}</strong></div>
                                 <div class="hub-template-summary">
                                     <span>${menuItems} mục menu</span>
                                     <span>·</span>
                                     <span>${snap.app?.faqs?.length || 0} câu hỏi</span>
                                     <span>·</span>
                                     <span>${snap.app?.keywords?.length || 0} từ khóa</span>
+                                    <span>·</span>
+                                    <span>${usedPages.length} trang đang dùng</span>
                                 </div>
                             </div>
                             <div class="hub-card-foot">
-                                <button class="hub-secondary" onclick="AutomationHub.previewTemplate('${t.id}')">Xem trước</button>
-                                ${!t.builtin ? (t.status === 'ARCHIVED' ? `<button class="hub-secondary" onclick="AutomationHub.restoreTemplate('${t.id}')">Khôi phục</button>` : `<button class="hub-secondary" onclick="AutomationHub.archiveTemplate('${t.id}')">Lưu trữ</button><button class="hub-secondary" style="color:#ba3434;" onclick="AutomationHub.deleteTemplate('${t.id}')">Xóa</button>`) : ''}
-                                <button class="hub-primary" ${t.status === 'ARCHIVED' ? 'disabled title="Khôi phục mẫu trước khi sử dụng"' : ''} onclick="AutomationHub.renderApplicationModal('${t.id}')">Sử dụng mẫu</button>
+                                <button class="hub-secondary hub-action-preview" onclick="AutomationHub.previewTemplate('${t.id}')">Xem trước</button>
+                                ${t.builtin
+                                    ? '<span class="hub-action-placeholder" aria-hidden="true"></span><span class="hub-action-placeholder" aria-hidden="true"></span>'
+                                    : t.status === 'ARCHIVED'
+                                        ? `<button class="hub-secondary hub-action-edit" onclick="AutomationHub.restoreTemplate('${t.id}')">Kích hoạt lại</button><button class="hub-secondary hub-action-lifecycle danger" onclick="AutomationHub.deleteTemplate('${t.id}')">Xóa</button>`
+                                        : `<button class="hub-secondary hub-action-edit" onclick="AutomationHub.openTemplateEditor('${t.id}')">Chỉnh sửa</button><button class="hub-secondary hub-action-lifecycle" title="Ngừng cho áp dụng mới nhưng vẫn giữ mẫu, lịch sử và cấu hình trên các trang" onclick="AutomationHub.archiveTemplate('${t.id}')">Ngừng sử dụng</button>`}
+                                <button class="hub-primary hub-action-use" ${t.status === 'ARCHIVED' ? 'disabled title="Kích hoạt lại mẫu trước khi sử dụng"' : ''} onclick="AutomationHub.renderApplicationModal('${t.id}')">Sử dụng mẫu</button>
                             </div>
                         </article>
                     `; }).join('')}
@@ -312,7 +523,7 @@ window.AutomationHub = (() => {
             ` : `
                 <div class="hub-empty">
                     <strong>${templateCategory === 'builtin' ? 'Không tìm thấy mẫu sẵn có' : 'Chưa có mẫu của tôi'}</strong>
-                    ${templateCategory === 'builtin' ? 'Thử tìm với từ khóa khác.' : 'Bạn có thể bấm nút "＋ Tạo mẫu" ở trên hoặc "Lưu thành mẫu" từ cấu hình hiện tại để lưu vào mục này.'}
+                    ${templateCategory === 'builtin' ? 'Thử tìm với từ khóa khác.' : 'Bấm nút "＋ Tạo mẫu", chọn trang nguồn rồi cấu hình trực tiếp trong Automation của trang đó.'}
                 </div>
             `}
         `;
@@ -384,8 +595,93 @@ window.AutomationHub = (() => {
         const template = data.templates.find(t=>t.id===id);
         if (!template) return notify('Không tìm thấy mẫu.');
         const snap = templateSnapshot(template);
-        const menuItems = (snap.app?.menus || []).flatMap(menu => menu.items || []);
-        dialog(template.name,`<p class="hub-help">${h(template.description)}</p><div class="hub-field"><span>Menu chính</span><div class="hub-preview-menu">${menuItems.length ? menuItems.map(i=>`<div>☰ &nbsp; ${h(i.title)}</div>`).join('') : '<div>Không có menu trong mẫu này</div>'}</div></div><div class="hub-field"><span>Tin nhắn mở đầu</span><p class="hub-note">${snap.welcome?.text ? h(snap.welcome.text) : 'Không có tin nhắn mở đầu trong mẫu này'}</p></div><p class="hub-help">${snap.app?.faqs?.length || 0} câu hỏi · ${snap.app?.keywords?.length || 0} từ khóa · ${snap.app?.sequences?.length || 0} kịch bản</p>`,'Sử dụng mẫu',()=>{ api.closeDialog(); api.renderApplicationModal(id); },!template.builtin?`<button type="button" class="hub-secondary" style="margin-right:auto;" onclick="AutomationHub.deleteTemplate('${id}')">Xóa mẫu</button>`:'');
+        const app = snap.app || {};
+        const menus = app.menus || [], menuItems = menus.flatMap(menu => menu.items || []);
+        const faqs = app.faqs || [], keywords = app.keywords || [], flows = app.flows || [];
+        const sequences = app.sequences || [], rules = app.rules || [];
+        const version = template.versions?.find(v=>v.id===template.currentVersionId) || template.versions?.[0];
+        const source = pageById(template.sourcePageId);
+        const sourceLabel = source ? `${source.name} · ${source.channel}` : template.builtin ? 'Mẫu hệ thống AntBot' : template.description?.replace(/^Mẫu tạo từ\s*/,'') || 'Không xác định';
+        const versionLabel = version ? `v${version.versionNo}` : template.builtin ? 'Bản hệ thống' : 'v1';
+        const statusLabel = template.status === 'ARCHIVED' ? 'Đã ngừng sử dụng' : version?.status === 'READY' || template.builtin ? 'Sẵn sàng' : 'Đang hoạt động';
+        const dependencies = version?.dependencies || [];
+        const parentTemplate = data.templates.find(t=>t.id===template.parentTemplateId);
+        const baseTemplateLabel = template.builtin ? `${template.name} · Mẫu gốc hệ thống` : parentTemplate?.name || 'Chưa xác định';
+        const variants = data.pages.map(page=>({page,record:data.records[scopeKey({type:'page',id:page.id})]}))
+            .filter(item=>item.record?.managedTemplateId===template.id||item.record?.templateOrigin?.templateId===template.id);
+        const actionLabel = action => ({
+            NEW_MESSAGE:'Tin nhắn', MESSAGE_FLOW:'Luồng tin nhắn', START_FLOW:'Luồng tin nhắn',
+            OPT_IN:'Nhận thông báo', OPEN_URL:'Mở liên kết', TRANSFER_INBOX:'Chuyển tư vấn viên'
+        })[action?.type] || action?.type || 'Chưa cấu hình';
+        const section = (title,count,content,open=false) => `<details class="tpl-preview-section" ${open?'open':''}><summary><span>${title}</span><b>${count}</b></summary><div class="tpl-preview-section-body">${content}</div></details>`;
+        const empty = label => `<p class="tpl-preview-empty">Không có ${label} trong mẫu này.</p>`;
+        const list = (items, renderer, label) => items.length ? `<div class="tpl-preview-list">${items.map(renderer).join('')}</div>` : empty(label);
+        const menuPreviewContent = menus.length
+            ? list(menus,menu=>`<div class="tpl-preview-menu-block"><strong>${h(menu.name || 'Menu')}</strong><small>${menu.mode==='DEFAULT'?'Mặc định':'Tùy chỉnh'} · ${(menu.items||[]).length} mục</small><div class="hub-preview-menu">${(menu.items||[]).map(item=>`<div><span>☰ &nbsp;${h(item.title)}</span><small>${h(actionLabel(item.action))}</small></div>`).join('') || '<div>Menu chưa có mục</div>'}</div></div>`,'menu')
+            : '<div class="hub-preview-menu"><div>Không có menu trong mẫu này</div></div>';
+
+        focusReturn = document.activeElement;
+        closeAccountMenu(); closeWorkspaceSwitcher();
+        const modal = document.getElementById('hubModal');
+        modal.hidden = false;
+        modal.innerHTML = `
+            <div class="hub-dialog hub-dialog-large tpl-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="tplPreviewTitle">
+                <div class="hub-dialog-head tpl-preview-head">
+                    <div>
+                        <div class="tpl-preview-badges"><span>${template.builtin?'Mẫu hệ thống':'Mẫu của tôi'}</span><span>${h(statusLabel)}</span><span>${h(versionLabel)}</span></div>
+                        <h2 id="tplPreviewTitle">${h(template.name)}</h2>
+                        <p>${h(template.description || 'Không có mô tả')}</p>
+                    </div>
+                    <button aria-label="Đóng" onclick="AutomationHub.closeDialog()">×</button>
+                </div>
+                <div class="tpl-preview-scroll">
+                    <div class="tpl-preview-meta">
+                        <div><span>Nguồn cấu hình</span><strong>${h(sourceLabel)}</strong></div>
+                        <div><span>Mẫu gốc</span><strong>${h(baseTemplateLabel)}</strong></div>
+                        <div><span>Phiên bản</span><strong>${h(versionLabel)} · ${h(statusLabel)}</strong></div>
+                        <div><span>Chế độ áp dụng</span><strong>Bản nháp / Tắt</strong></div>
+                    </div>
+                    <div class="tpl-preview-metrics" aria-label="Thống kê nội dung mẫu">
+                        ${[['Menu',menus.length],['Mục menu',menuItems.length],['FAQ',faqs.length],['Từ khóa',keywords.length],['Luồng',flows.length],['Kịch bản',sequences.length],['Quy luật',rules.length],['Phụ thuộc',dependencies.length]].map(([label,value])=>`<div><strong>${value}</strong><span>${label}</span></div>`).join('')}
+                    </div>
+                    <section class="tpl-preview-variants" aria-label="Các trang đang sử dụng mẫu">
+                        <div class="tpl-preview-variants-head"><div><strong>Trang đang sử dụng mẫu</strong><span>${variants.length ? `${variants.length} trang đang cấu hình hoặc đã áp dụng mẫu` : 'Chưa có trang nào áp dụng mẫu này'}</span></div></div>
+                        ${variants.length ? `
+                        <div class="tpl-preview-variant-grid">${variants.map(({page,record})=>`<article>
+                            <div>${avatar(page)}<span><strong>${h(page.name)}</strong><small>${h(page.channel)} · ${record.managedTemplateId===template.id?'Trang cấu hình mẫu':h(record.templateOrigin?.variantLabel || 'Đã áp dụng')}</small></span></div>
+                            <p>${record.managedTemplateId===template.id?'Các lần Lưu/Xuất bản hợp lệ trên trang này sẽ tạo phiên bản mới cho mẫu.':h(record.templateOrigin?.summary || `Đã áp dụng mẫu ${template.name}.`)}</p>
+                            <div class="tpl-preview-change-tags">${(record.templateOrigin?.changedAreas || ['Menu chính','Tin nhắn','FAQ','Từ khóa']).slice(0,4).map(area=>`<span>${h(area)}</span>`).join('')}</div>
+                            <button type="button" class="hub-secondary" onclick="AutomationHub.openTemplateVariant('${page.id}')">Mở cấu hình trang →</button>
+                        </article>`).join('')}</div>` : '<div class="tpl-preview-no-usage">Áp dụng mẫu cho một trang để bắt đầu tạo biến thể riêng.</div>'}
+                    </section>
+                    <div class="tpl-preview-columns">
+                        <div>
+                            ${section('Menu chính',menuItems.length,menuPreviewContent,true)}
+                            ${section('Tin nhắn',Number(!!snap.welcome)+Number(!!snap.fallback),`${snap.welcome?.text?`<div class="tpl-preview-message"><strong>Tin nhắn mở đầu</strong><p>${h(snap.welcome.text)}</p></div>`:empty('tin nhắn mở đầu')}${snap.fallback?.text?`<div class="tpl-preview-message"><strong>Tin nhắn mặc định</strong><p>${h(snap.fallback.text)}</p></div>`:empty('tin nhắn mặc định')}`,true)}
+                            ${section('Câu hỏi thường gặp',faqs.length,list(faqs,(faq,index)=>`<div class="tpl-preview-row"><span><b>${index+1}.</b> ${h(faq.question)}</span><small>${h(actionLabel(faq.action))}</small></div>`,'FAQ'))}
+                        </div>
+                        <div>
+                            ${section('Từ khóa',keywords.length,list(keywords,item=>`<div class="tpl-preview-row"><span><strong>${h(item.name)}</strong><small>${h(item.keyword || item.includeTerms?.join(', ') || 'Chưa có cụm từ')}</small></span><em>${item.active?'Đang bật':'Sẽ tắt'}</em></div>`,'từ khóa'),true)}
+                            ${section('Luồng tin nhắn',flows.length,list(flows,item=>`<div class="tpl-preview-row"><span><strong>${h(item.name)}</strong><small>${item.blocks?.length || item.steps?.length || 0} bước/khối</small></span><em>Sẽ tắt</em></div>`,'luồng tin nhắn'))}
+                            ${section('Kịch bản chăm sóc',sequences.length,list(sequences,item=>`<div class="tpl-preview-row"><span><strong>${h(item.name)}</strong><small>${item.steps?.length || 0} bước</small></span><em>Sẽ tắt</em></div>`,'kịch bản'))}
+                            ${section('Quy luật',rules.length,list(rules,item=>`<div class="tpl-preview-row"><span><strong>${h(item.name)}</strong><small>${item.conditions?.length || 0} điều kiện · ${item.actions?.length || 0} hành động</small></span><em>Sẽ tắt</em></div>`,'quy luật'))}
+                            ${section('Liên kết phụ thuộc',dependencies.length,dependencies.length?list(dependencies,item=>`<div class="tpl-preview-row"><span>${h(item.fromName || item.fromId || 'Cấu hình')} → ${h(item.needName || item.needId || 'Tài nguyên')}</span></div>`,'liên kết'): '<p class="tpl-preview-safe">✓ Không có liên kết thiếu trong phiên bản mẫu.</p>')}
+                        </div>
+                    </div>
+                    <div class="tpl-preview-warning"><strong>Trước khi sử dụng</strong><span>Mẫu chỉ được nạp dưới dạng Bản nháp/Tắt. Bạn cần kiểm tra nội dung, liên kết và khả năng hỗ trợ của kênh trước khi xuất bản.</span></div>
+                </div>
+                <div class="hub-dialog-foot">
+                    ${!template.builtin?`<button type="button" class="hub-secondary tpl-preview-delete" onclick="AutomationHub.deleteTemplate('${id}')">Xóa mẫu</button>`:''}
+                    <button type="button" class="hub-secondary" onclick="AutomationHub.closeDialog()">Đóng</button>
+                    ${!template.builtin&&template.status!=='ARCHIVED'?`<button type="button" class="hub-secondary" onclick="AutomationHub.closeDialog();AutomationHub.openTemplateEditor('${id}')">Chỉnh sửa mẫu</button>`:''}
+                    <button type="button" class="hub-primary" ${template.status==='ARCHIVED'?'disabled title="Kích hoạt lại mẫu trước khi sử dụng"':''} onclick="AutomationHub.closeDialog();AutomationHub.renderApplicationModal('${id}')">Sử dụng mẫu</button>
+                </div>
+            </div>`;
+        modal.querySelector('.hub-dialog-head button')?.focus();
+    };
+    api.openTemplateVariant = pageId => {
+        api.closeDialog();
+        api.enter('page',pageId);
     };
     api.applyTemplate = id => {
         api.persist(); const template = data.templates.find(t=>t.id===id);
@@ -396,6 +692,15 @@ window.AutomationHub = (() => {
             next.app.userMenuAssignments = copy(previous.app.userMenuAssignments || []);
             next.app.menus.forEach(m=>{ m.status='DRAFT'; });
             next.dirtyMenus = next.app.menus.map(m=>m.id); next.dirtyModules=[]; next.fallbackDirty=false;
+            next.templateOrigin = {
+                templateId:template.id, templateName:template.name,
+                rootTemplateId:template.rootTemplateId || template.id,
+                pageId:target.type==='page'?target.id:null,
+                variantLabel:`Biến thể của ${scopeName(target)}`,
+                summary:`Cấu hình được áp dụng từ mẫu ${template.name} và có thể tùy chỉnh độc lập.`,
+                customizedAt:new Date().toISOString(),
+                changedAreas:['Menu chính','Tin nhắn','FAQ','Từ khóa','Kịch bản','Quy luật']
+            };
             data.records[key] = next;
             // Do not persist the old editor over the newly applied template when entering its scope.
             api.scope = null;
@@ -408,11 +713,14 @@ window.AutomationHub = (() => {
     let templateChannelFilter = 'all';
 
     let tplWizard = {
+        editingTemplateId: null,
         step: 1,
         name: '',
         description: '',
+        baseTemplateId: 'template-shop-online',
         sourcePageId: null,
         sourceChannel: 'Facebook',
+        workingConfig: null,
         selected: {
             menus: new Set(),
             faqs: new Set(),
@@ -432,9 +740,12 @@ window.AutomationHub = (() => {
     function getSourceConfig(pageId) {
         return copy(data.records[scopeKey({ type:'page', id:pageId })] || seed);
     }
+    function getWizardSourceConfig() {
+        return tplWizard.workingConfig || getSourceConfig(tplWizard.sourcePageId);
+    }
 
     function analyzeDependencies() {
-        const source = getSourceConfig(tplWizard.sourcePageId);
+        const source = getWizardSourceConfig();
         const sel = tplWizard.selected;
         const issues = [];
 
@@ -561,6 +872,8 @@ window.AutomationHub = (() => {
                 name,
                 description: `Mẫu tạo từ ${scopeName(api.scope || { type: 'page', id: data.pages[0]?.id })}`,
                 builtin: false,
+                parentTemplateId: source.templateOrigin?.templateId || 'template-shop-online',
+                rootTemplateId: source.templateOrigin?.rootTemplateId || source.templateOrigin?.templateId || 'template-shop-online',
                 config: source
             };
             data.templates.push(newTpl);
@@ -572,14 +885,26 @@ window.AutomationHub = (() => {
         });
     };
 
-    api.openTemplateWizard = () => {
+    api.beginTemplateCreation = () => {
+        templateCreationPending = true;
+        status = 'active'; query = ''; platform = 'all'; pageNumber = 1; selected.clear();
+        api.open('pages');
+        notify('Chọn một trang, thiết lập Automation rồi Lưu/Xuất bản để tạo mẫu.');
+    };
+
+    api.openTemplateWizard = forcedSourcePageId => {
         api.persist();
+        const sourcePageId = forcedSourcePageId || (api.scope?.type === 'page' ? api.scope.id : data.pages.find(p=>p.connected && !p.hidden)?.id) || data.pages[0]?.id;
+        const sourceConfig = getSourceConfig(sourcePageId);
         tplWizard = {
+            editingTemplateId: null,
             step: 1,
             name: '',
             description: '',
-            sourcePageId: (api.scope?.type === 'page' ? api.scope.id : data.pages.find(p=>p.connected && !p.hidden)?.id) || data.pages[0]?.id,
+            baseTemplateId: sourceConfig.templateOrigin?.templateId || 'template-shop-online',
+            sourcePageId,
             sourceChannel: 'Facebook',
+            workingConfig: copy(sourceConfig),
             selected: {
                 menus: new Set(),
                 faqs: new Set(),
@@ -595,11 +920,36 @@ window.AutomationHub = (() => {
         api.renderWizard();
     };
 
+    api.openTemplateEditor = templateId => {
+        const template = data.templates.find(t=>t.id===templateId);
+        if (!template || template.builtin) return notify('Chỉ có thể chỉnh sửa Mẫu của tôi.');
+        if (template.status === 'ARCHIVED') return notify('Hãy kích hoạt lại mẫu trước khi chỉnh sửa.');
+        const sourcePageId = template.sourcePageId && pageById(template.sourcePageId)
+            ? template.sourcePageId
+            : data.pages.find(p=>p.connected&&!p.hidden)?.id;
+        if (!sourcePageId) return notify('Mẫu chưa có trang cấu hình hợp lệ.');
+        const key = scopeKey({type:'page',id:sourcePageId});
+        const current = copy(data.records[key] || templateSnapshot(template));
+        const conflictingTemplate = current.managedTemplateId && current.managedTemplateId !== template.id
+            ? data.templates.find(t=>t.id===current.managedTemplateId)
+            : null;
+        if (conflictingTemplate) return notify(`Trang cấu hình đang được liên kết với mẫu "${conflictingTemplate.name}".`);
+        current.managedTemplateId = template.id;
+        data.records[key] = current;
+        template.sourcePageId = sourcePageId;
+        save();
+        api.closeDialog();
+        api.scope = null;
+        api.enter('page',sourcePageId);
+        notify(`Đang chỉnh sửa mẫu "${template.name}" bằng workspace Automation của ${pageById(sourcePageId).name}.`);
+    };
+
     api.renderWizard = () => {
         const step = tplWizard.step;
+        const isEditing = !!tplWizard.editingTemplateId;
         const sourcePage = pageById(tplWizard.sourcePageId) || data.pages[0];
         tplWizard.sourceChannel = sourcePage.channel;
-        const source = getSourceConfig(tplWizard.sourcePageId);
+        const source = getWizardSourceConfig();
 
         let body = '';
         let foot = '';
@@ -607,19 +957,25 @@ window.AutomationHub = (() => {
         if (step === 1) {
             body = `
                 <div class="tpl-wizard-steps">
-                    <div class="tpl-step active"><span class="tpl-step-num">1</span><span>Nguồn & Tên</span></div>
+                    <div class="tpl-step active"><span class="tpl-step-num">1</span><span>Thông tin mẫu</span></div>
                     <div class="tpl-step-line"></div>
-                    <div class="tpl-step"><span class="tpl-step-num">2</span><span>Chọn nội dung</span></div>
-                    <div class="tpl-step-line"></div>
-                    <div class="tpl-step"><span class="tpl-step-num">3</span><span>Kiểm tra liên kết</span></div>
+                    <div class="tpl-step"><span class="tpl-step-num">2</span><span>Cấu hình trong Automation</span></div>
                 </div>
                 <div style="padding:18px 22px;display:grid;gap:14px;">
+                    <div class="tpl-source-summary">
+                        ${avatar(sourcePage)}
+                        <div><span>Trang cấu hình</span><strong>${h(sourcePage.name)}</strong><small>${h(sourcePage.channel)} · ${h(sourcePage.externalId || '')}</small></div>
+                        ${isEditing?'':`<button type="button" onclick="AutomationHub.closeDialog()">Đổi trang</button>`}
+                    </div>
                     <label class="hub-field">
-                        <span>Trang nguồn (Chỉ đọc)</span>
-                        <select id="tplSourcePage" onchange="AutomationHub.wizardChangeSource(this.value)">
-                            ${data.pages.filter(p=>p.connected && !p.hidden).map(p=>`<option value="${p.id}" ${p.id===tplWizard.sourcePageId?'selected':''}>${h(p.name)} (${p.channel})</option>`).join('')}
+                        <span>Mẫu gốc *</span>
+                        <select id="tplBaseTemplate" required onchange="AutomationHub.wizardChangeBase(this.value)">
+                            <option value="">-- Chọn mẫu gốc --</option>
+                            ${data.templates.filter(t=>t.status!=='ARCHIVED'&&t.id!==tplWizard.editingTemplateId).map(t=>`<option value="${t.id}" ${t.id===tplWizard.baseTemplateId?'selected':''}>${h(t.name)}${t.builtin?' · Hệ thống':''}</option>`).join('')}
                         </select>
+                        <small>Mẫu mới là một biến thể độc lập và luôn giữ liên kết truy vết về mẫu gốc.</small>
                     </label>
+                    <input id="tplSourcePage" type="hidden" value="${h(sourcePage.id)}">
                     <label class="hub-field">
                         <span>Tên mẫu (1 - 100 ký tự) *</span>
                         <input id="tplName" required maxlength="100" value="${h(tplWizard.name)}" placeholder="Ví dụ: Kịch bản bán hàng thời trang hè">
@@ -628,28 +984,28 @@ window.AutomationHub = (() => {
                         <span>Mô tả mẫu</span>
                         <textarea id="tplDesc" style="height:65px;border:1px solid #dbe3ef;border-radius:7px;padding:8px 10px;font-size:11.5px;outline:none;" placeholder="Mô tả mục đích sử dụng, kịch bản hỗ trợ...">${h(tplWizard.description)}</textarea>
                     </label>
-                    <p class="hub-note">Trang nguồn được bảo vệ ở chế độ chỉ đọc. Khi đóng gói mẫu, cấu hình trên trang nguồn sẽ không bị thay đổi.</p>
+                    <p class="hub-note">Sau khi tạo, hệ thống mở Automation của ${h(sourcePage.name)}. Hãy thiết lập Menu chính, FAQ, tin nhắn, từ khóa, kịch bản và quy luật tại đây. Mỗi lần Lưu/Xuất bản hợp lệ sẽ cập nhật một phiên bản mới cho mẫu.</p>
                 </div>
             `;
             foot = `
                 <button type="button" class="hub-secondary" onclick="AutomationHub.closeDialog()">Hủy</button>
-                <button type="button" class="hub-primary" onclick="AutomationHub.wizardStep1Submit()">Tiếp tục: Chọn nội dung →</button>
+                <button type="button" class="hub-primary" onclick="AutomationHub.wizardStep1Submit()">Tạo mẫu & mở Automation →</button>
             `;
         } else if (step === 2) {
             const count = totalSelectedCount();
             body = `
                 <div class="tpl-wizard-steps">
-                    <div class="tpl-step done"><span class="tpl-step-num">✓</span><span>${h(tplWizard.name)}</span></div>
+                    <div class="tpl-step done"><span class="tpl-step-num">✓</span><span>Tên mẫu: ${h(tplWizard.name)}</span></div>
                     <div class="tpl-step-line done"></div>
                     <div class="tpl-step active"><span class="tpl-step-num">2</span><span>Chọn nội dung</span></div>
                     <div class="tpl-step-line"></div>
                     <div class="tpl-step"><span class="tpl-step-num">3</span><span>Kiểm tra liên kết</span></div>
                 </div>
-                <div style="padding:14px 20px;">
+                <div class="tpl-wizard-selection">
                     <div class="tpl-two-col">
                         <div class="tpl-col-left">
                             <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <span style="font-size:11.5px;color:#64748b;font-weight:600;">CẤU HÌNH TẠI: <strong>${h(sourcePage.name)}</strong></span>
+                                <span style="font-size:11.5px;color:#64748b;font-weight:600;">MẪU: <strong>${h(tplWizard.name)}</strong> · MẪU GỐC: <strong>${h(data.templates.find(t=>t.id===tplWizard.baseTemplateId)?.name || 'Chưa chọn')}</strong> · NGUỒN: <strong>${h(sourcePage.name)}</strong></span>
                                 <div style="display:flex;gap:6px;">
                                     <button type="button" class="tpl-btn-sm tpl-btn-add" onclick="AutomationHub.wizardSelectAll(true)">Chọn tất cả</button>
                                     <button type="button" class="tpl-btn-sm tpl-btn-drop" onclick="AutomationHub.wizardSelectAll(false)">Bỏ chọn</button>
@@ -841,7 +1197,7 @@ window.AutomationHub = (() => {
             `;
             foot = `
                 <button type="button" class="hub-secondary" onclick="AutomationHub.wizardBack(2)">← Quay lại</button>
-                <button type="button" class="hub-primary" ${isValid ? '' : 'disabled'} onclick="AutomationHub.finalizeTemplate()">Hoàn tất tạo mẫu</button>
+                <button type="button" class="hub-primary" ${isValid ? '' : 'disabled'} onclick="AutomationHub.finalizeTemplate()">${isEditing?'Lưu phiên bản mới':'Hoàn tất tạo mẫu'}</button>
             `;
         }
 
@@ -850,10 +1206,10 @@ window.AutomationHub = (() => {
         modal.innerHTML = `
             <div class="hub-dialog hub-dialog-large" role="dialog" aria-modal="true">
                 <div class="hub-dialog-head">
-                    <h2>Tạo mẫu Automation mới</h2>
+                    <h2>${isEditing?'Chỉnh sửa mẫu Automation':'Tạo mẫu từ cấu hình trang'}</h2>
                     <button aria-label="Đóng" onclick="AutomationHub.closeDialog()">×</button>
                 </div>
-                <div>${body}</div>
+                <div class="tpl-wizard-content tpl-wizard-content-step-${step}">${body}</div>
                 <div class="hub-dialog-foot">${foot}</div>
             </div>
         `;
@@ -863,6 +1219,10 @@ window.AutomationHub = (() => {
 
     api.wizardChangeSource = pageId => {
         tplWizard.sourcePageId = pageId;
+        tplWizard.workingConfig = getSourceConfig(pageId);
+        if (tplWizard.workingConfig.templateOrigin?.templateId) {
+            tplWizard.baseTemplateId = tplWizard.workingConfig.templateOrigin.templateId;
+        }
         tplWizard.selected.menus.clear();
         tplWizard.selected.faqs.clear();
         tplWizard.selected.keywords.clear();
@@ -871,6 +1231,10 @@ window.AutomationHub = (() => {
         tplWizard.selected.flows.clear();
         tplWizard.selected.welcome = false;
         tplWizard.selected.defaultMessage = false;
+    };
+
+    api.wizardChangeBase = templateId => {
+        tplWizard.baseTemplateId = templateId;
     };
 
     api.wizardToggleSingleton = (key, on) => {
@@ -888,22 +1252,69 @@ window.AutomationHub = (() => {
         const nameInput = document.getElementById('tplName');
         const descInput = document.getElementById('tplDesc');
         const name = (nameInput?.value || '').trim();
+        const baseTemplateId = document.getElementById('tplBaseTemplate')?.value || '';
         if (!name) return notify('Vui lòng nhập tên mẫu (từ 1 đến 100 ký tự).');
+        if (!baseTemplateId || !data.templates.some(t=>t.id===baseTemplateId)) return notify('Vui lòng chọn mẫu gốc cho mẫu mới.');
         if (name.length > 100) return notify('Tên mẫu không được vượt quá 100 ký tự.');
 
         const normalized = name.toLowerCase();
-        if (data.templates.some(t => t.name.trim().toLowerCase() === normalized)) {
+        if (data.templates.some(t => t.id!==tplWizard.editingTemplateId && t.name.trim().toLowerCase() === normalized)) {
             return notify(`Tên mẫu "${name}" đã tồn tại trong tổ chức. Vui lòng chọn tên khác.`);
         }
 
         tplWizard.name = name;
+        tplWizard.baseTemplateId = baseTemplateId;
         tplWizard.description = (descInput?.value || '').trim();
-        tplWizard.step = 2;
-        api.renderWizard();
+        const page = pageById(tplWizard.sourcePageId);
+        if (!page) return notify('Trang cấu hình không còn tồn tại.');
+        const key = scopeKey({type:'page',id:page.id});
+        const source = copy(data.records[key] || seed);
+        if (source.managedTemplateId) {
+            const existing = data.templates.find(t=>t.id===source.managedTemplateId);
+            return notify(existing
+                ? `Trang này đã cấu hình mẫu "${existing.name}". Hãy mở mẫu đó để chỉnh sửa.`
+                : 'Trang này đã được liên kết với một mẫu khác.');
+        }
+        const templateId = uid('template');
+        const versionId = uid('tplv');
+        const initialSnapshot = copy(source);
+        delete initialSnapshot.managedTemplateId;
+        delete initialSnapshot.templateOrigin;
+        initialSnapshot.app.userMenuAssignments = [];
+        const parent = data.templates.find(t=>t.id===baseTemplateId);
+        const newTemplate = {
+            id:templateId,
+            organizationId:'org-antbuddy-default',
+            name,
+            nameNormalized:normalized,
+            description:tplWizard.description || `Mẫu được cấu hình tại ${page.name}`,
+            symbol:'📦',
+            parentTemplateId:baseTemplateId,
+            rootTemplateId:parent?.rootTemplateId || baseTemplateId,
+            sourcePageId:page.id,
+            sourceChannel:page.channel,
+            managedScopeKey:key,
+            ownerId:'user-admin',
+            status:'ACTIVE',
+            builtin:false,
+            versions:[{id:versionId,versionNo:1,status:'READY',snapshot:initialSnapshot,dependencies:[],contentHash:`hash-${crypto.randomUUID().slice(0,8)}`,createdBy:'Quản trị viên',createdAt:new Date().toISOString(),publishedModule:'Khởi tạo từ trang'}],
+            currentVersionId:versionId,
+            config:initialSnapshot,
+            runs:[]
+        };
+        source.managedTemplateId = templateId;
+        data.records[key] = source;
+        data.templates.push(newTemplate);
+        save();
+        api.closeDialog();
+        templateCreationPending = false;
+        api.scope = null;
+        api.enter('page',page.id);
+        notify(`Đã tạo mẫu "${name}". Hãy thiết lập và Lưu/Xuất bản Automation của ${page.name}.`);
     };
 
     api.wizardSelectAll = on => {
-        const source = getSourceConfig(tplWizard.sourcePageId);
+        const source = getWizardSourceConfig();
         if (on) {
             (source.app.menus || []).forEach(m => tplWizard.selected.menus.add(m.id));
             (source.app.faqs || []).forEach(f => tplWizard.selected.faqs.add(f.id));
@@ -927,7 +1338,7 @@ window.AutomationHub = (() => {
     };
 
     api.wizardToggleGroup = (group, on) => {
-        const source = getSourceConfig(tplWizard.sourcePageId);
+        const source = getWizardSourceConfig();
         const map = {
             menus: source.app.menus,
             faqs: source.app.faqs,
@@ -960,7 +1371,7 @@ window.AutomationHub = (() => {
     api.renderWizardManifest = () => {
         const host = document.getElementById('tplManifestHost');
         if (!host) return;
-        const source = getSourceConfig(tplWizard.sourcePageId);
+        const source = getWizardSourceConfig();
         const sel = tplWizard.selected;
         const count = totalSelectedCount();
 
@@ -991,6 +1402,31 @@ window.AutomationHub = (() => {
             groupsHtml += `<div class="tpl-manifest-group"><div class="tpl-manifest-group-title"><span>Luồng tin nhắn</span><span>${sel.flows.size}</span></div>${[...sel.flows].map(id=>`<div class="tpl-manifest-item">🌊 ${h(source.app.flows?.find(f=>f.id===id)?.name || id)}</div>`).join('')}</div>`;
         }
 
+        let editorHtml = '';
+        [...sel.menus].forEach(menuId => {
+            const menu = source.app.menus?.find(item=>item.id===menuId);
+            if (!menu) return;
+            editorHtml += `<div class="tpl-tune-group"><strong>📋 ${h(menu.name)}</strong>${(menu.items||[]).map(item=>`<label><span>Tên mục menu</span><input maxlength="30" value="${h(item.title)}" oninput="AutomationHub.wizardEditField('menuItem','${menu.id}','${item.id}','title',this.value)"></label>`).join('')}</div>`;
+        });
+        [...sel.faqs].forEach(id => {
+            const item = source.app.faqs?.find(f=>f.id===id);
+            if (item) editorHtml += `<div class="tpl-tune-group"><strong>❓ Câu hỏi FAQ</strong><label><span>Câu hỏi</span><input maxlength="120" value="${h(item.question)}" oninput="AutomationHub.wizardEditField('faq','${id}','','question',this.value)"></label><label><span>Nội dung trả lời</span><textarea maxlength="640" oninput="AutomationHub.wizardEditField('faq','${id}','','answer',this.value)">${h(item.action?.text || '')}</textarea></label></div>`;
+        });
+        if (sel.welcome && source.welcome) editorHtml += `<div class="tpl-tune-group"><strong>👋 Tin nhắn mở đầu</strong><label><span>Nội dung</span><textarea maxlength="640" oninput="AutomationHub.wizardEditField('welcome','','','text',this.value)">${h(source.welcome.text || '')}</textarea></label><label><span>Nhãn trả lời nhanh</span><input maxlength="30" value="${h(source.welcome.reply || '')}" oninput="AutomationHub.wizardEditField('welcome','','','reply',this.value)"></label></div>`;
+        if (sel.defaultMessage && source.fallback) editorHtml += `<div class="tpl-tune-group"><strong>🤖 Tin nhắn mặc định</strong><label><span>Nội dung</span><textarea maxlength="1200" oninput="AutomationHub.wizardEditField('fallback','','','text',this.value)">${h(source.fallback.text || '')}</textarea></label></div>`;
+        [...sel.keywords].forEach(id => {
+            const item = source.app.keywords?.find(k=>k.id===id);
+            if (item) editorHtml += `<div class="tpl-tune-group"><strong>🔑 Từ khóa</strong><label><span>Tên quy tắc</span><input maxlength="80" value="${h(item.name || '')}" oninput="AutomationHub.wizardEditField('keyword','${id}','','name',this.value)"></label><label><span>Cụm từ kích hoạt</span><input value="${h(item.keyword || '')}" oninput="AutomationHub.wizardEditField('keyword','${id}','','keyword',this.value)"></label></div>`;
+        });
+        [...sel.sequences].forEach(id => {
+            const item = source.app.sequences?.find(s=>s.id===id);
+            if (item) editorHtml += `<div class="tpl-tune-group"><strong>⏱️ Kịch bản chăm sóc</strong><label><span>Tên kịch bản</span><input maxlength="100" value="${h(item.name || '')}" oninput="AutomationHub.wizardEditField('sequence','${id}','','name',this.value)"></label></div>`;
+        });
+        [...sel.rules].forEach(id => {
+            const item = source.app.rules?.find(r=>r.id===id);
+            if (item) editorHtml += `<div class="tpl-tune-group"><strong>⚙️ Quy luật</strong><label><span>Tên quy luật</span><input maxlength="100" value="${h(item.name || '')}" oninput="AutomationHub.wizardEditField('rule','${id}','','name',this.value)"></label></div>`;
+        });
+
         host.innerHTML = `
             <div class="tpl-manifest-head">
                 <h3>Nội dung mẫu</h3>
@@ -1000,6 +1436,8 @@ window.AutomationHub = (() => {
                 <div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
                     ${groupsHtml}
                 </div>
+                <div class="tpl-tune-head"><div><strong>Tinh chỉnh nội dung mẫu</strong><span>Chỉ sửa bản sao đang tạo, không thay đổi trang nguồn hoặc mẫu gốc.</span></div><button type="button" class="hub-secondary" onclick="AutomationHub.wizardResetEdits()">Khôi phục nội dung</button></div>
+                <div class="tpl-tune-editor">${editorHtml || '<p class="tpl-preview-empty">Các mục đã chọn hiện không có trường nội dung có thể chỉnh nhanh.</p>'}</div>
             ` : `
                 <div class="tpl-manifest-empty">
                     <p style="font-size:24px;margin-bottom:6px;">📦</p>
@@ -1008,6 +1446,29 @@ window.AutomationHub = (() => {
                 </div>
             `}
         `;
+    };
+
+    api.wizardEditField = (type, id, childId, field, value) => {
+        const source = tplWizard.workingConfig;
+        if (!source) return;
+        let item;
+        if (type === 'menuItem') item = source.app.menus?.find(m=>m.id===id)?.items?.find(i=>i.id===childId);
+        if (type === 'faq') item = source.app.faqs?.find(f=>f.id===id);
+        if (type === 'keyword') item = source.app.keywords?.find(k=>k.id===id);
+        if (type === 'sequence') item = source.app.sequences?.find(s=>s.id===id);
+        if (type === 'rule') item = source.app.rules?.find(r=>r.id===id);
+        if (type === 'welcome') item = source.welcome;
+        if (type === 'fallback') item = source.fallback;
+        if (!item) return;
+        if (type === 'faq' && field === 'answer') {
+            item.action ||= {type:'NEW_MESSAGE'};
+            item.action.text = value;
+        } else item[field] = value;
+    };
+
+    api.wizardResetEdits = () => {
+        tplWizard.workingConfig = getSourceConfig(tplWizard.sourcePageId);
+        api.renderWizard();
     };
 
     api.wizardStep2Submit = () => {
@@ -1021,7 +1482,7 @@ window.AutomationHub = (() => {
         if (issues.length > 0) return notify('Còn phụ thuộc chưa giải quyết. Vui lòng bấm "+ Thêm vào mẫu" hoặc bỏ mục.');
         if (totalSelectedCount() === 0) return notify('Mẫu không có nội dung.');
 
-        const source = getSourceConfig(tplWizard.sourcePageId);
+        const source = getWizardSourceConfig();
         const sel = tplWizard.selected;
 
         // Build immutable snapshot
@@ -1040,11 +1501,15 @@ window.AutomationHub = (() => {
             published: []
         };
 
+        const editingTemplate = data.templates.find(t=>t.id===tplWizard.editingTemplateId);
+        const nextVersionNo = editingTemplate
+            ? Math.max(0,...(editingTemplate.versions||[]).map(v=>Number(v.versionNo)||0)) + 1
+            : 1;
         const templateId = uid('template');
         const versionId = uid('tplv');
         const v1 = {
             id: versionId,
-            versionNo: 1,
+            versionNo: nextVersionNo,
             status: 'READY',
             snapshot: snapshotData,
             dependencies: [],
@@ -1053,12 +1518,35 @@ window.AutomationHub = (() => {
             createdAt: new Date().toISOString()
         };
 
+        if (editingTemplate) {
+            editingTemplate.name = tplWizard.name;
+            editingTemplate.nameNormalized = tplWizard.name.toLowerCase();
+            editingTemplate.description = tplWizard.description || editingTemplate.description;
+            editingTemplate.parentTemplateId = tplWizard.baseTemplateId;
+            editingTemplate.rootTemplateId = data.templates.find(t=>t.id===tplWizard.baseTemplateId)?.rootTemplateId || tplWizard.baseTemplateId;
+            editingTemplate.sourcePageId = tplWizard.sourcePageId;
+            editingTemplate.sourceChannel = tplWizard.sourceChannel;
+            editingTemplate.versions ||= [];
+            editingTemplate.versions.push(v1);
+            editingTemplate.currentVersionId = versionId;
+            editingTemplate.config = snapshotData;
+            editingTemplate.updatedAt = new Date().toISOString();
+            save();
+            api.closeDialog();
+            templateCategory = 'mine';
+            api.open('templates');
+            notify(`Đã lưu phiên bản v${nextVersionNo} cho mẫu "${editingTemplate.name}".`);
+            return;
+        }
+
         const newTemplate = {
             id: templateId,
             organizationId: 'org-antbuddy-default',
             name: tplWizard.name,
             nameNormalized: tplWizard.name.toLowerCase(),
             description: tplWizard.description || `Đóng gói từ ${pageById(tplWizard.sourcePageId)?.name || 'Trang nguồn'}`,
+            parentTemplateId: tplWizard.baseTemplateId,
+            rootTemplateId: data.templates.find(t=>t.id===tplWizard.baseTemplateId)?.rootTemplateId || tplWizard.baseTemplateId,
             symbol: '📦',
             sourcePageId: tplWizard.sourcePageId,
             sourceChannel: tplWizard.sourceChannel,
@@ -1088,7 +1576,7 @@ window.AutomationHub = (() => {
         if (stayInCompare) {
             api.openCompareModal(templateId, targetPageId, itemKey);
         } else {
-            api.renderApplicationModal(templateId, targetPageId);
+            api.renderApplicationModal(templateId, targetPageId, true);
         }
     };
 
@@ -1299,18 +1787,25 @@ window.AutomationHub = (() => {
                     </div>
                 </div>
                 <div class="hub-dialog-foot">
-                    <button type="button" class="hub-primary" onclick="AutomationHub.renderApplicationModal('${templateId}','${targetPageId}')">← Quay lại danh sách áp dụng</button>
+                    <button type="button" class="hub-primary" onclick="AutomationHub.renderApplicationModal('${templateId}','${targetPageId}',true)">← Quay lại danh sách áp dụng</button>
                 </div>
             </div>
         `;
     };
 
-    api.renderApplicationModal = (templateId, targetPageId) => {
+    api.renderApplicationModal = (templateId, targetPageId, keepTargets = false) => {
         const template = data.templates.find(t=>t.id===templateId);
         if (!template) return notify('Không tìm thấy mẫu.');
         if (template.status === 'ARCHIVED') return notify('Mẫu đã lưu trữ. Hãy khôi phục mẫu trước khi sử dụng.');
-        const targetPage = pageById(targetPageId) || data.pages.find(p=>p.connected && !p.hidden);
+        const availablePages = data.pages.filter(p=>p.connected&&!p.hidden);
+        const fallbackPage = pageById(targetPageId) || availablePages[0];
+        api._applicationTargets ||= {};
+        if (!keepTargets || !api._applicationTargets[templateId]) api._applicationTargets[templateId] = new Set(fallbackPage?[fallbackPage.id]:[]);
+        const selectedIds = [...api._applicationTargets[templateId]].filter(id=>availablePages.some(p=>p.id===id));
+        const targetPage = pageById(selectedIds[0]) || fallbackPage;
         if (!targetPage) return notify('Không có trang đích khả dụng.');
+        if (!selectedIds.length) api._applicationTargets[templateId].add(targetPage.id);
+        const selectedPages = availablePages.filter(p=>api._applicationTargets[templateId].has(p.id));
 
         const snap = templateSnapshot(template);
         const targetConfig = getSourceConfig(targetPage.id);
@@ -1453,36 +1948,35 @@ window.AutomationHub = (() => {
                 </div>
                 <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1;">
                     <div class="tpl-page-dropdown-container">
-                        <span style="font-size:13px;font-weight:700;color:#1e293b;display:block;margin-bottom:6px;">Chọn trang đích</span>
+                        <span style="font-size:13px;font-weight:700;color:#1e293b;display:block;margin-bottom:6px;">Chọn nhiều trang đích</span>
                         <button type="button" id="tplPageDropdownTrigger" class="tpl-page-dropdown-trigger" onclick="const m=document.getElementById('tplPageDropdownMenu');if(m)m.hidden=!m.hidden;">
-                            <div class="tpl-page-card-avatar" style="background:${targetPage.color || '#4f46e5'};">${h(targetPage.initials || '▦')}</div>
+                            <div class="tpl-page-card-avatar" style="background:#00176B;">${selectedPages.length}</div>
                             <div class="tpl-page-card-info">
-                                <span class="tpl-page-card-name">${h(targetPage.name)}</span>
-                                <span class="tpl-page-card-sub">${h(targetPage.handle || `@${targetPage.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`)} · ${h(targetPage.channel)}</span>
+                                <span class="tpl-page-card-name">${selectedPages.length} trang đã chọn</span>
+                                <span class="tpl-page-card-sub">${h(selectedPages.map(p=>p.name).join(' · ') || 'Chưa chọn trang')}</span>
                             </div>
                             <svg class="tpl-page-dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
 
                         <div id="tplPageDropdownMenu" class="tpl-page-dropdown-menu" hidden>
-                            ${data.pages.filter(p=>p.connected&&!p.hidden).map(p=>{
-                                const isSel = p.id === targetPage.id;
+                            ${availablePages.map(p=>{
+                                const isSel = api._applicationTargets[templateId].has(p.id);
                                 const handleText = p.handle || `@${p.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
                                 return `
-                                    <button type="button" class="tpl-page-card ${isSel ? 'selected' : ''}" onclick="AutomationHub.renderApplicationModal('${templateId}','${p.id}')">
+                                    <label class="tpl-page-card ${isSel ? 'selected' : ''}">
+                                        <input type="checkbox" ${isSel?'checked':''} onchange="AutomationHub.toggleApplicationTarget('${templateId}','${p.id}',this.checked)">
                                         <div class="tpl-page-card-avatar" style="background:${p.color || '#4f46e5'};">${h(p.initials || '▦')}</div>
                                         <div class="tpl-page-card-info">
                                             <span class="tpl-page-card-name">${h(p.name)}</span>
                                             <span class="tpl-page-card-sub">${h(handleText)} · ${h(p.channel)}</span>
                                         </div>
                                         ${isSel ? '<span class="tpl-page-card-check">✓</span>' : ''}
-                                    </button>
+                                    </label>
                                 `;
                             }).join('')}
                         </div>
 
-                        <select id="tplTargetPageSelect" style="display:none;" onchange="AutomationHub.renderApplicationModal('${templateId}',this.value)">
-                            ${data.pages.filter(p=>p.connected&&!p.hidden).map(p=>`<option value="${p.id}" ${p.id===targetPage.id?'selected':''}>${h(p.name)} (${p.channel})</option>`).join('')}
-                        </select>
+                        <small style="display:block;margin-top:6px;color:#64748b;">Bảng so sánh dùng trang đầu tiên đã chọn; mỗi trang vẫn có backup và application log riêng.</small>
                     </div>
 
                     ${isZalo && (snap.app?.faqs?.length || 0) > 0 ? `
@@ -1530,20 +2024,29 @@ window.AutomationHub = (() => {
 
                     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;">
                         <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#166534;font-weight:600;cursor:pointer;">
-                            <input type="checkbox" id="chkAppPlanConfirm" onchange="const b=document.getElementById('btnApplyTemplateSubmit');if(b)b.disabled=!this.checked;">
-                            <span>Tôi xác nhận kế hoạch áp dụng này và đồng ý nạp cấu hình mới dưới dạng Bản nháp / Tắt.</span>
+                            <input type="checkbox" id="chkAppPlanConfirm" onchange="const b=document.getElementById('btnApplyTemplateSubmit');if(b)b.disabled=!this.checked||${selectedPages.length}===0;">
+                            <span>Tôi xác nhận áp dụng mẫu cho ${selectedPages.length} trang đã chọn dưới dạng Bản nháp / Tắt.</span>
                         </label>
                     </div>
                 </div>
                 <div class="hub-dialog-foot" style="flex-shrink:0;">
                     <button type="button" class="hub-secondary" onclick="AutomationHub.closeDialog()">Hủy</button>
-                    <button type="button" id="btnApplyTemplateSubmit" class="hub-primary" disabled onclick="AutomationHub.executeApplication('${templateId}','${targetPage.id}')">Xác nhận áp dụng</button>
+                    <button type="button" id="btnApplyTemplateSubmit" class="hub-primary" disabled onclick="AutomationHub.executeApplications('${templateId}')">Áp dụng cho ${selectedPages.length} trang</button>
                 </div>
             </div>
         `;
     };
 
-    api.executeApplication = (templateId, targetPageId) => {
+    api.toggleApplicationTarget = (templateId,pageId,on) => {
+        api._applicationTargets ||= {};
+        const targets = api._applicationTargets[templateId] ||= new Set();
+        on ? targets.add(pageId) : targets.delete(pageId);
+        api.renderApplicationModal(templateId,pageId,true);
+        const menu = document.getElementById('tplPageDropdownMenu');
+        if (menu) menu.hidden = false;
+    };
+
+    api.executeApplication = (templateId, targetPageId, batchMode = false) => {
         const confirmCheck = document.getElementById('chkAppPlanConfirm');
         if (confirmCheck && !confirmCheck.checked) return notify('Vui lòng xác nhận đồng ý với kế hoạch áp dụng.');
 
@@ -1745,6 +2248,17 @@ window.AutomationHub = (() => {
         // Flows
         (snap.app?.flows || []).forEach(fl => nextConfig.app.flows.push(fl));
 
+        nextConfig.templateOrigin = {
+            templateId:template.id,
+            templateName:template.name,
+            rootTemplateId:template.rootTemplateId || template.id,
+            pageId:targetPage.id,
+            variantLabel:`Biến thể của ${targetPage.name}`,
+            summary:`Đã áp dụng từ mẫu ${template.name}; các thay đổi sau áp dụng chỉ thuộc trang này.`,
+            customizedAt:new Date().toISOString(),
+            changedAreas:['Menu chính','Tin nhắn','FAQ','Từ khóa','Kịch bản','Quy luật']
+        };
+
         data.records[key] = nextConfig;
 
         // Record ApplicationRun (FR-TPL-007, FR-TPL-009)
@@ -1770,7 +2284,33 @@ window.AutomationHub = (() => {
         save();
 
         // Show Post-Application Checklist (FR-TPL-008)
+        if (batchMode) return {targetPage,runRecord};
         api.renderPostApplyChecklist(template, targetPage, runRecord);
+        return {targetPage,runRecord};
+    };
+
+    api.executeApplications = templateId => {
+        const confirmCheck = document.getElementById('chkAppPlanConfirm');
+        if (!confirmCheck?.checked) return notify('Vui lòng xác nhận đồng ý với kế hoạch áp dụng.');
+        const selectedIds = [...(api._applicationTargets?.[templateId] || [])];
+        if (!selectedIds.length) return notify('Vui lòng chọn ít nhất một trang đích.');
+        const uniqueScopes = new Set(), results = [];
+        selectedIds.forEach(pageId=>{
+            const key = scopeKey({type:'page',id:pageId});
+            if (uniqueScopes.has(key)) return;
+            uniqueScopes.add(key);
+            const result = api.executeApplication(templateId,pageId,true);
+            if (result) results.push(result);
+        });
+        const template = data.templates.find(t=>t.id===templateId);
+        api._applicationTargets[templateId] = new Set();
+        api.renderPostApplyBatchChecklist(template,results,selectedIds.length-results.length);
+    };
+
+    api.renderPostApplyBatchChecklist = (template,results,sharedScopeSkipped=0) => {
+        const modal = document.getElementById('hubModal');
+        modal.hidden = false;
+        modal.innerHTML = `<div class="hub-dialog" role="dialog" aria-modal="true"><div class="hub-dialog-head"><h2 style="color:#059669;">✓ Áp dụng mẫu thành công</h2><button aria-label="Đóng" onclick="AutomationHub.closeDialog()">×</button></div><div style="padding:18px 22px;display:grid;gap:12px;"><p>Đã áp dụng <strong>${h(template?.name||'Mẫu')}</strong> cho <strong>${results.length} phạm vi cấu hình</strong>.</p><div class="tpl-checklist">${results.map(({targetPage})=>`<div class="tpl-chk-item done"><span class="tpl-chk-icon">✓</span><span>${h(targetPage.name)} · Đã tạo backup, cấu hình bản nháp và application log riêng</span></div>`).join('')}</div>${sharedScopeSkipped?`<p class="hub-note">${sharedScopeSkipped} trang thuộc nhóm dùng chung đã được gộp để tránh áp dụng trùng cùng một cấu hình.</p>`:''}</div><div class="hub-dialog-foot"><button class="hub-secondary" onclick="AutomationHub.closeDialog();AutomationHub.open('templates')">Về danh sách mẫu</button><button class="hub-primary" onclick="AutomationHub.closeDialog();AutomationHub.open('pages')">Về danh sách trang</button></div></div>`;
     };
 
     api.renderPostApplyChecklist = (template, targetPage, runRecord) => {
@@ -1809,7 +2349,7 @@ window.AutomationHub = (() => {
         t.status = 'ARCHIVED';
         save();
         renderContent();
-        notify(`Đã lưu trữ mẫu "${t.name}". Mẫu này sẽ không thể áp dụng mới.`);
+        notify(`Đã ngừng sử dụng mẫu "${t.name}". Mẫu được giữ lại nhưng không thể áp dụng mới.`);
     };
 
     api.restoreTemplate = id => {
@@ -1818,10 +2358,16 @@ window.AutomationHub = (() => {
         t.status = 'ACTIVE';
         save();
         renderContent();
-        notify(`Đã khôi phục mẫu "${t.name}".`);
+        notify(`Đã kích hoạt lại mẫu "${t.name}".`);
     };
 
-    api.deleteTemplate = id => dialog('Xóa mẫu?', '<p class="hub-note">Các trang và nhóm đã áp dụng mẫu vẫn giữ nguyên cấu hình. Mẫu này sẽ bị xóa vĩnh viễn khỏi danh sách.</p>','Xóa mẫu',()=>{ data.templates=data.templates.filter(t=>t.id!==id);save();api.closeDialog();renderContent();notify('Đã xóa mẫu.'); });
+    api.deleteTemplate = id => dialog('Xóa mẫu?', '<p class="hub-note">Các trang và nhóm đã áp dụng mẫu vẫn giữ nguyên cấu hình. Liên kết cấu hình với trang nguồn sẽ được gỡ và mẫu bị xóa vĩnh viễn khỏi danh sách.</p>','Xóa mẫu',()=>{
+        Object.values(data.records).forEach(record => {
+            if (record?.managedTemplateId === id) delete record.managedTemplateId;
+        });
+        data.templates=data.templates.filter(t=>t.id!==id);
+        save();api.closeDialog();renderContent();notify('Đã xóa mẫu và gỡ liên kết với trang cấu hình.');
+    });
 
     api.restoreTemplateBackup = () => {
         if (!api.scope) return; const key=scopeKey(api.scope),backup=data.templateBackups?.[key];
@@ -1837,5 +2383,5 @@ function saveWelcomeConfig() {
     const text=document.getElementById('welcomeMsgInput').value.trim();
     if(document.getElementById('welcomeActiveToggle').checked && !text) return notify('Vui lòng nhập tin nhắn mở đầu.');
     moduleDirtyState.delete('welcome-message');
-    AutomationHub.persist(); notify('Đã lưu tin nhắn mở đầu.');
+    AutomationHub.persist(); notify('Đã lưu tin nhắn mở đầu.'); AutomationHub.publishLinkedTemplate('Tin nhắn mở đầu');
 }
