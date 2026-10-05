@@ -1,0 +1,16 @@
+# FR-AUT-003: Câu hỏi thường gặp
+
+| Mục | Nội dung |
+| --- | --- |
+| Mô tả | Cho phép quản trị tạo, sửa, xóa, sắp xếp, xem trước và publish các câu hỏi gợi ý mà khách có thể bấm. FR sở hữu `FAQItem`, thứ tự hiển thị và click event. FR không quét tin nhắn tự do, không sở hữu nội dung/flow đích và không tính metric. |
+| Đối tượng liên quan | Admin/Quản lý; khách hàng; connector |
+| Pre-conditions | Kênh hỗ trợ FAQ/quick replies; có quyền; action target hợp lệ |
+| Điều kiện kích hoạt | Quản trị mở Automation → Câu hỏi thường gặp; hoặc khách bấm một FAQ item thuộc published version. |
+| Luồng xử lý chính | 1. Hệ thống tải draft, published version, capability và preview.<br>2. Quản trị thêm/sửa câu hỏi, chọn đúng một action, kéo thả thứ tự hoặc xóa item.<br>3. UI kiểm tra câu hỏi sau trim, trùng lặp, giới hạn item/ký tự theo capability và target action.<br>4. Lưu nháp không đổi FAQ khách đang thấy. Publish tạo snapshot, sync connector và chỉ activate khi sync thành công.<br>5. Connector hiển thị FAQ published theo thứ tự. Khi khách bấm, hệ thống xác thực payload và phát `faq.clicked` + `action.requested`.<br>6. Câu hỏi đã bấm là structured payload; không được đưa lại qua Keyword matcher. |
+| Post-condition | FAQ draft/published được cập nhật; kênh hiển thị đúng thứ tự; click hợp lệ phát action và analytics event đúng một lần. |
+| Luồng thay thế | - Vượt giới hạn capability: khóa thêm và từ chối API.<br>- Câu hỏi trống/trùng hoặc action thiếu tham số: đánh dấu item, chặn lưu/publish.<br>- Target hỏng sau publish: click được ghi `FAILED_TARGET`; không tự chọn phản hồi khác.<br>- Payload click cũ không còn thuộc published version: bỏ qua an toàn, ghi log stale payload.<br>- Kênh không hỗ trợ: màn hình chỉ rõ lý do và không cho publish. |
+| Sub-flow | **SF-01 – Sắp xếp:** order liên tục và preview cập nhật ngay.<br>**SF-02 – Click FAQ:** structured payload không đi qua Keyword matcher.<br>**SF-03 – Payload cũ:** bỏ qua an toàn, ghi stale/security log và không chạy action. |
+| Giao diện hệ thống | Màn FAQ gồm danh sách kéo thả, bộ đếm giới hạn, popup câu hỏi/action, Mobile Preview, Lưu nháp, Xuất bản và trạng thái lỗi tại item. |
+| Yêu cầu phi chức năng | Preview p95 ≤ 100 ms; xử lý click nội bộ p95 ≤ 300 ms trước khi gọi target; chống replay bằng event ID; hỗ trợ keyboard reorder và accessible label. |
+| AC tương ứng | - **AC-AUT-003-01:** Thêm/sửa/xóa/sắp xếp cập nhật preview ngay nhưng không đổi bản published.<br>- **AC-AUT-003-02:** Câu hỏi trùng, trống hoặc thiếu action bị chặn tại đúng item.<br>- **AC-AUT-003-03:** Publish thành công hiển thị đúng thứ tự trên kênh.<br>- **AC-AUT-003-04:** Click item hợp lệ chỉ chạy action một lần và không kích hoạt Keyword.<br>- **AC-AUT-003-05:** Click payload cũ/giả mạo không chạy action và có security log.<br>- **AC-AUT-003-06:** Preview click không tạo event analytics thật. |
+| BR tương ứng | - **BR-AUT-003-01:** Số item và độ dài lấy từ capability kênh.<br>- **BR-AUT-003-02:** Câu hỏi không trùng trong cùng FAQSet sau trim/case-fold.<br>- **BR-AUT-003-03:** Item có đúng một action; chỉ target cùng tenant/kênh và đang dùng được.<br>- **BR-AUT-003-04:** Preview và click test không thực thi action thật, không sinh metric.<br>- **BR-AUT-003-05:** Mỗi click event chỉ được xử lý một lần. |
