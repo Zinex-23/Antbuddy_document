@@ -1,0 +1,16 @@
+# FR-AUT-010: Soạn tin nhắn & Cấu hình nút bấm (Message Composer)
+
+| Mục | Nội dung |
+|---|---|
+| **Mô tả** | Bộ công cụ dùng chung cho toàn bộ hệ thống để soạn nội dung tin nhắn và gắn nút bấm tương tác:<br>- **Nội dung đa dạng**: Soạn tin nhắn dạng chữ (≤ 640 ký tự), chèn tên khách `{customer_name}`, chèn ảnh, khối Bộ sưu tập trượt ngang (Carousel ≤ 10 thẻ), video, audio.<br>- **Nút bấm & Trả lời nhanh**: Tiêu đề nút ≤ 20 ký tự; mỗi nút gắn 1 trong các hành động chuẩn (gửi tin tiếp, mở link web, chạy flow, gắn tag, đổi menu, xin quyền Opt-in).<br>- **Khung xem thử điện thoại (Mobile Preview)**: Mô phỏng khung chat hiển thị tin nhắn thời gian thực khi đang gõ phím.<br>- **Quản lý Lưu nháp**: Lưu nháp (`DRAFT`) an toàn, khi nào bấm "Xuất bản" mới áp dụng ra ngoài. |
+| **Đối tượng liên quan** | Admin, Quản lý shop |
+| **Pre-conditions** | Đã đăng nhập tài khoản có quyền cấu hình. |
+| **Điều kiện kích hoạt** | Mở trình soạn tin từ bất kỳ tính năng nào: FAQ, Lời chào, Tin mặc định, Từ khóa, Kịch bản chăm sóc. |
+| **Luồng xử lý chính** | **1. Nhập văn bản**: Gõ nội dung (bộ đếm n/640 ký tự), chèn emoji hoặc biến `{customer_name}`.<br>**2. Thêm khối nội dung**: Bấm chọn thêm Ảnh, Video hoặc Carousel (thẻ trượt ngang có ảnh, tiêu đề, nút bấm).<br>**3. Gắn nút bấm**: Bấm "Thêm nút" ➔ Nhập tiêu đề nút (≤ 20 ký tự) ➔ Chọn hành động (ví dụ: Mở trang web) ➔ Điền link URL ➔ Bấm Lưu nút.<br>**4. Xem trước**: Nhìn sang cột Mobile Preview để kiểm tra tin nhắn hiển thị đẹp mắt chưa.<br>**5. Lưu cấu hình**: Bấm "Lưu" để lưu vào hệ thống. |
+| **Post-condition** | Tin nhắn được lưu chuẩn hóa trong cơ sở dữ liệu và sẵn sàng để bot gửi cho khách hàng. |
+| **Luồng thay thế** | - **AF-1 (Vượt ký tự)**: Gõ chữ quá 640 ký tự hoặc tiêu đề nút quá 20 ký tự ➔ Chặn không cho gõ thêm, báo đỏ.<br>- **AF-2 (Đổi loại hành động)**: Đổi từ Mở web sang Chạy flow ➔ Ô nhập link web tự động bị xóa, hiện danh sách chọn flow.<br>- **AF-3 (Chống vòng lặp nối bước)**: Nối bước 1 sang bước 2 rồi nối ngược lại bước 1 ➔ Chặn lưu, báo lỗi chu trình lặp. |
+| **Sub-flow** | - **SF-01 (Danh mục các hành động khi bấm nút)**: (1) Gửi tin nhắn mới; (2) Chạy luồng có sẵn; (3) Mở link web; (4) Gắn thẻ tag; (5) Gỡ thẻ tag; (6) Cập nhật thông tin khách; (7) Đổi menu chính; (8) Đăng ký Opt-in. |
+| **Giao diện hệ thống** | - Khung giữa: Ô nhập chữ (bộ đếm n/640), danh sách nút bấm kèm nút "Thêm nút", thanh chọn thêm 6 loại khối nội dung, nút Lưu.<br>- Cột phải: Mobile Preview hiển thị giả lập khung chat thời gian thực.<br>- Popup nút: Ô nhập tên nút (n/20), bộ chọn hành động, các ô nhập tham số theo hành động, nút Lưu. |
+| **Yêu cầu phi chức năng** | - Mobile Preview phản hồi trong < 50ms khi gõ phím.<br>- Không làm mất nội dung đang soạn khi mất kết nối mạng đột ngột. |
+| **AC tương ứng** | - **AC-01**: Gõ chữ đến ký tự 641 ➔ Chặn không cho gõ tiếp, bộ đếm hiện `640/640`.<br>- **AC-02**: Nhập tiêu đề nút > 20 ký tự ➔ Chặn không cho nhập thêm.<br>- **AC-03**: Thêm 1 thẻ Carousel có ảnh và nút bấm ➔ Mobile Preview hiển thị đúng thẻ trượt ngang.<br>- **AC-04**: Thao tác trên Preview ➔ Không gửi tin nhắn thật ra ngoài. |
+| **BR tương ứng** | - **BR-01**: Chữ tối đa 640 ký tự; tiêu đề nút tối đa 20 ký tự.<br>- **BR-02**: Tối đa 3 nút/khối; tối đa 11 trả lời nhanh/bước.<br>- **BR-03**: Carousel có từ 1 đến 10 thẻ trượt ngang. |

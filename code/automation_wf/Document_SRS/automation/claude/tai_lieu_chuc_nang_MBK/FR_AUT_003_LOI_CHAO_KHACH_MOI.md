@@ -1,0 +1,16 @@
+# FR-AUT-003: Lời chào khách mới (Tin nhắn mở đầu)
+
+| Mục | Nội dung |
+|---|---|
+| **Mô tả** | Tự động gửi tin nhắn chào mừng khi khách hàng bắt đầu một cuộc hội thoại mới với trang:<br>- Chỉ gửi cho **tin nhắn đầu tiên của phiên mới** (khách nhắn lần đầu, hoặc nhắn lại sau 24 giờ không tương tác).<br>- Mỗi phiên chỉ gửi **đúng 1 lần duy nhất** (dù khách có nhắn liên tiếp nhiều câu cũng không chào lặp lại).<br>- Không gửi đè: Nếu tin nhắn đầu tiên của khách đã khớp Từ khóa, bot sẽ trả lời Từ khóa chứ không gửi lời chào.<br>- Có công tắc Bật/Tắt tức thì. |
+| **Đối tượng liên quan** | Admin, Quản lý shop |
+| **Pre-conditions** | Fanpage đã kết nối và đang hoạt động. |
+| **Điều kiện kích hoạt** | Khách gửi tin nhắn văn bản đầu tiên của một phiên hội thoại mới vào trang. |
+| **Luồng xử lý chính** | **1. Xem cấu hình**: Vào mục "Tin nhắn mở đầu", thấy công tắc Kích hoạt và khung xem trước nội dung lời chào.<br>**2. Bật/Tắt**: Gạt công tắc "Kích hoạt" (có hiệu lực ngay lập tức mà không cần bấm Lưu).<br>**3. Soạn lời chào**: Bấm "Chỉnh sửa" ➔ Soạn nội dung (chữ, chèn tên khách `{customer_name}`, ảnh, các nút bấm gợi ý) ➔ Bấm Lưu.<br>**4. Bot chạy thực tế**: Khách mới nhắn tin ➔ Hệ thống kiểm tra: (1) Công tắc có BẬT không? (2) Có phải phiên mới không? (3) Khách có gõ từ khóa không? ➔ Nếu đủ điều kiện, bot gửi ngay lời chào cho khách. |
+| **Post-condition** | Khách hàng mới nhận được lời chào tự động thân thiện ngay lập tức khi vừa nhắn tin vào trang. |
+| **Luồng thay thế** | - **AF-1 (Tin đầu đã khớp từ khóa)**: Khách mới vào gõ ngay: "Shop ở đâu vậy?" (đã có từ khóa "ở đâu") ➔ Bot trả lời địa chỉ cửa hàng, **tự động bỏ qua tin nhắn chào mừng**.<br>- **AF-2 (Khách nhắn liên tục 3 câu)**: Khách nhắn "Alo", "Shop ơi", "Tư vấn mình với" trong 10 giây ➔ Bot chỉ gửi lời chào ở câu đầu tiên, 2 câu sau không gửi lại.<br>- **AF-3 (Tắt công tắc kích hoạt)**: Công tắc đang TẮT ➔ Khách mới nhắn tin vào không nhận lời chào tự động. |
+| **Sub-flow** | - **SF-01 (Định nghĩa Phiên mới - Session)**: Là lần đầu tiên khách chat với trang, HOẶC khách chat lại sau khi phiên cũ đã kết thúc (quá 24 giờ không có tin nhắn mới).<br>- **SF-02 (Cá nhân hóa tên khách)**: Dùng cú pháp `{customer_name}` trong câu chào ➔ Bot tự đổi thành "Chào anh Tuấn", "Chào chị Lan" khi gửi thật. |
+| **Giao diện hệ thống** | - Màn hình chính: Công tắc Bật/Tắt, nút "Chỉnh sửa", khung nội dung xem trước, Mobile Preview, bảng thống kê số người nhận.<br>- Màn hình chỉnh sửa: Trình soạn tin nhắn (ô nhập chữ, nút bấm, khối ảnh), nút Lưu và nút Quay lại. |
+| **Yêu cầu phi chức năng** | - Gửi lời chào trong ≤ 1 giây sau khi khách nhắn tin.<br>- Thay thế biến tên khách chính xác 100%. |
+| **AC tương ứng** | - **AC-01**: Khách mới nhắn "Xin chào" ➔ Bot gửi tin nhắn mở đầu có đúng tên khách.<br>- **AC-02**: Khách nhắn tiếp câu thứ hai ➔ Bot không gửi lại tin nhắn mở đầu.<br>- **AC-03**: Khách mới gõ câu chứa từ khóa "báo giá" ➔ Bot gửi bảng giá, không gửi tin chào.<br>- **AC-04**: Gạt tắt công tắc ➔ Khách mới nhắn tin không nhận được lời chào. |
+| **BR tương ứng** | - **BR-01**: Mỗi fanpage chỉ có duy nhất 1 luồng Tin nhắn mở đầu.<br>- **BR-02**: Tin nhắn mở đầu chỉ gửi tối đa 1 lần/phiên hội thoại.<br>- **BR-03**: Công tắc Bật/Tắt có hiệu lực ngay khi gạt. |
