@@ -13,8 +13,8 @@
 | **FR-003** | **Lời chào khách mới** | Bot gửi lời chào khi khách mở phiên chat | Khách nhắn tin câu đầu tiên (phiên mới) | Chỉ gửi đúng 1 lần/phiên. Nếu câu đầu tiên của khách đã khớp Từ khóa thì bot trả lời Từ khóa, không chào đè. |
 | **FR-004** | **Tin khi bot không hiểu** | Gửi tin xin lỗi/hướng dẫn khi bot bí | Khách nói câu lạ bot không hiểu | Có bộ chặn spam (Rate limit 15 phút): khách nhắn 5 câu bot không hiểu liên tiếp thì bot chỉ gửi tin này đúng 1 lần. |
 | **FR-005** | **Bắt từ khóa trả lời** | Khách gõ từ khóa ➔ trả lời theo mẫu | Khách gõ đúng từ (giá, tư vấn, shop ở đâu) | Hỗ trợ: Khớp chính xác (`EXACT`) hoặc Chứa từ (`CONTAINS`). Từ khóa dài hơn được ưu tiên hơn từ khóa ngắn. |
-| **FR-006** | **Tự động trả lời comment** | Khách bình luận bài viết ➔ bot tự trả lời | Khách comment dưới bài post Fanpage | Tự động bấm Like, viết bình luận công khai bên dưới và tự động gửi 1 tin nhắn vào hộp thư riêng của khách. |
-| **FR-007** | **Ẩn comment chứa SĐT** | Tự ẩn bình luận có SĐT hoặc từ nhạy cảm | Ngay khi comment vừa xuất hiện | Dùng regex phát hiện SĐT (10 số) ➔ Gọi API ẩn ngay lập tức trong 1 giây để đối thủ không cướp khách. |
+| **FR-006** | **Luồng hội thoại (Flow Builder)** | Tạo kịch bản hội thoại nhiều bước, có rẽ nhánh theo lựa chọn khách | Khách bấm nút Menu / nút trong tin nhắn gắn action "Chạy Flow" | **Khác Kịch bản chăm sóc**: Flow rẽ nhánh tức thì theo lựa chọn; Kịch bản chăm sóc gửi tin theo thời gian. Tối đa 30 bước/Flow. Vòng lặp bị ngắt ở cấp 5. |
+| **FR-007** | **Quản lý thẻ nhãn (Customer Tagging)** | Gắn nhãn phân loại khách (VIP, Đã mua, Quan tâm...) để lọc và phân khúc | Bot tự gắn khi chạy Flow/Quy luật; Admin gắn thủ công | Tag dùng làm bộ lọc cho Broadcast (FR-013) và điều kiện cho Quy luật (FR-009). Tối đa 50 tag/khách. Xóa tag cần xác nhận vì ảnh hưởng toàn bộ khách đang có tag đó. |
 | **FR-008** | **Kịch bản nuôi dưỡng (Drip)** | Gửi tin sau 1 ngày, 3 ngày, 7 ngày... | Khách được đưa vào kịch bản (Enroll) | Chỉ gửi từ 08:30 đến 18:00 (đến hạn ban đêm thì dời sang sáng hôm sau). Khách đã mua hàng thì tự động dừng kịch bản. |
 | **FR-009** | **Quy luật tự động (Rules)** | Nếu có sự kiện A ➔ Tự động làm việc B | Dữ liệu khách đổi (để lại SĐT, bấm nút) | Chạy tức thì: KHI có sự kiện ➔ NẾU đúng điều kiện ➔ THÌ chạy hành động. Giới hạn ngắt ở cấp 5 chống lặp vô tận. |
 | **FR-010** | **Soạn tin nhắn & Nút bấm** | Trình soạn nội dung dùng chung | Mọi nơi cần gửi tin nhắn hoặc gắn nút | Chữ tối đa 640 ký tự; Nút tối đa 20 ký tự. Có 8 loại hành động: gửi tin, chạy flow, mở link, gắn thẻ, đổi menu... |
@@ -53,7 +53,12 @@
 
 ## 3. Phân Biệt Các Tính Năng Hay Bị Nhầm Lẫn
 
-1. **[FR-008] Kịch bản theo lịch** vs **[FR-009] Quy luật tự động**:
+1. **[FR-006] Luồng hội thoại** vs **[FR-008] Kịch bản theo lịch** vs **[FR-009] Quy luật tự động**:
+   - *Luồng hội thoại*: Khách **bấm nút** ➔ Bot đi theo đúng nhánh được chọn (tức thì, theo tương tác).
+   - *Kịch bản theo lịch*: Bot tự động gửi tin **theo mốc thời gian** (sau 1 ngày, 3 ngày...) dù khách không làm gì.
+   - *Quy luật tự động*: Hệ thống phản ứng **tức thì khi có sự kiện hệ thống** (khách vừa để lại SĐT ➔ lập tức gắn tag VIP).
+
+2. **[FR-008] Kịch bản theo lịch** vs **[FR-009] Quy luật tự động**:
    - *Kịch bản theo lịch*: Chạy theo **thời gian dài hạn** (sau 1 ngày gửi tin A, sau 3 ngày gửi mã giảm giá B).
    - *Quy luật*: Chạy **ngay lập tức trong 0.1 giây** khi có sự kiện (khách vừa cho số điện thoại ➔ lập tức gắn tag VIP và chia số cho nhân viên sale gọi điện).
 
