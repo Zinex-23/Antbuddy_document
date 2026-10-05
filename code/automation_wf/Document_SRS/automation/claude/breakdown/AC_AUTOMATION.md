@@ -1,133 +1,206 @@
 # Danh mục Acceptance Criteria Automation
 
-Các Acceptance Criteria của bộ FR breakdown được quản lý tập trung tại đây. Mỗi FR chỉ tham chiếu mã AC.
-
-| Mã AC | FR áp dụng | Tiêu chí GIVEN - WHEN - THEN |
-|---|---|---|
-| `AC-AUT-001-01` | `FR-AUT-001` - Danh mục Menu chính | AC-001: GIVEN trang có Menu mặc định và hai Menu tùy chỉnh WHEN mở Menu chính THEN hiển thị đủ ba menu và chọn Menu mặc định. |
-| `AC-AUT-001-02` | `FR-AUT-001` - Danh mục Menu chính | AC-002: GIVEN người dùng chọn Menu tùy chỉnh WHEN chọn dòng menu THEN Preview và thống kê đổi theo menu, không mở editor. |
-| `AC-AUT-001-03` | `FR-AUT-001` - Danh mục Menu chính | AC-003: GIVEN tên hợp lệ WHEN tạo mới THEN menu nháp xuất hiện đúng trang. |
-| `AC-AUT-001-04` | `FR-AUT-001` - Danh mục Menu chính | AC-004: GIVEN menu có ba mục WHEN nhân bản THEN bản sao có ba mục, ID mới, không có assignment. |
-| `AC-AUT-001-05` | `FR-AUT-001` - Danh mục Menu chính | AC-005: GIVEN menu đang được khách sử dụng WHEN xác nhận xóa THEN khách fallback về Menu mặc định và tham chiếu bị gỡ. |
-| `AC-AUT-001-06` | `FR-AUT-001` - Danh mục Menu chính | AC-006: GIVEN Menu mặc định WHEN mở thao tác THEN không có Đổi tên hoặc Xóa. |
-| `AC-AUT-002-01` | `FR-AUT-002` - Biên tập mục Menu chính | AC-001: GIVEN 20 mục WHEN mở editor THEN không thể thêm mục thứ 21. |
-| `AC-AUT-002-02` | `FR-AUT-002` - Biên tập mục Menu chính | AC-002: GIVEN popup mở WHEN nhập 31 ký tự THEN chỉ nhận 30 và hiển thị `30/30`. |
-| `AC-AUT-002-03` | `FR-AUT-002` - Biên tập mục Menu chính | AC-003: GIVEN action tin nhắn và nội dung rỗng WHEN lưu THEN báo đúng lỗi và popup không đóng. |
-| `AC-AUT-002-04` | `FR-AUT-002` - Biên tập mục Menu chính | AC-004: GIVEN bật chuyển menu nhưng chưa chọn target WHEN lưu THEN trường target lỗi. |
-| `AC-AUT-002-05` | `FR-AUT-002` - Biên tập mục Menu chính | AC-005: GIVEN A, B, C WHEN kéo C lên đầu THEN state và Preview là C, A, B. |
-| `AC-AUT-002-06` | `FR-AUT-002` - Biên tập mục Menu chính | AC-006: GIVEN xác nhận xóa mục WHEN hoàn tất THEN counter giảm một và Preview bỏ mục đó. |
-| `AC-AUT-003-01` | `FR-AUT-003` - Xuất bản, phân phối và thống kê Menu chính | AC-001: GIVEN thay đổi hợp lệ WHEN lưu nháp THEN khách vẫn thấy version cũ. |
-| `AC-AUT-003-02` | `FR-AUT-003` - Xuất bản, phân phối và thống kê Menu chính | AC-002: GIVEN kênh kết nối WHEN publish thành công THEN khách thấy version mới và trạng thái là published. |
-| `AC-AUT-003-03` | `FR-AUT-003` - Xuất bản, phân phối và thống kê Menu chính | AC-003: GIVEN kênh mất kết nối WHEN publish THEN bị chặn nhưng draft còn nguyên. |
-| `AC-AUT-003-04` | `FR-AUT-003` - Xuất bản, phân phối và thống kê Menu chính | AC-004: GIVEN khách có assignment hợp lệ WHEN mở chat THEN thấy Menu tùy chỉnh. |
-| `AC-AUT-003-05` | `FR-AUT-003` - Xuất bản, phân phối và thống kê Menu chính | AC-005: GIVEN assignment hỏng WHEN mở chat THEN assignment bị gỡ và dùng Menu mặc định. |
-| `AC-AUT-003-06` | `FR-AUT-003` - Xuất bản, phân phối và thống kê Menu chính | AC-006: GIVEN khách A click chuyển menu WHEN xử lý THEN chỉ assignment của A thay đổi. |
-| `AC-AUT-003-07` | `FR-AUT-003` - Xuất bản, phân phối và thống kê Menu chính | AC-007: GIVEN chọn menu khác WHEN tải thống kê THEN toàn bộ chỉ số đổi theo đúng menu. |
-| `AC-AUT-004-01` | `FR-AUT-004` - Quản lý danh sách Câu hỏi thường gặp | AC-001: GIVEN danh sách rỗng WHEN mở trang THEN thấy empty state và `Thêm mới`. |
-| `AC-AUT-004-02` | `FR-AUT-004` - Quản lý danh sách Câu hỏi thường gặp | AC-002: GIVEN có 3 câu hỏi WHEN thêm câu hợp lệ THEN danh sách và Preview có 4 câu. |
-| `AC-AUT-004-03` | `FR-AUT-004` - Quản lý danh sách Câu hỏi thường gặp | AC-003: GIVEN đủ 4 câu WHEN mở trang THEN không thể thêm câu thứ 5. |
-| `AC-AUT-004-04` | `FR-AUT-004` - Quản lý danh sách Câu hỏi thường gặp | AC-004: GIVEN câu hỏi trùng WHEN lưu THEN hiển thị lỗi và không tạo bản ghi. |
-| `AC-AUT-004-05` | `FR-AUT-004` - Quản lý danh sách Câu hỏi thường gặp | AC-005: GIVEN xác nhận xóa WHEN hoàn tất THEN câu chỉ bị xóa khỏi draft. |
-| `AC-AUT-005-01` | `FR-AUT-005` - Cấu hình hành động Câu hỏi thường gặp | AC-001: GIVEN chưa chọn action WHEN lưu THEN popup không đóng và báo lỗi. |
-| `AC-AUT-005-02` | `FR-AUT-005` - Cấu hình hành động Câu hỏi thường gặp | AC-002: GIVEN chọn tạo tin nhắn mới WHEN lưu nội dung hợp lệ THEN câu hỏi tham chiếu đúng nội dung mới. |
-| `AC-AUT-005-03` | `FR-AUT-005` - Cấu hình hành động Câu hỏi thường gặp | AC-003: GIVEN chọn khối có sẵn WHEN xác nhận THEN hiển thị đúng target đã chọn. |
-| `AC-AUT-005-04` | `FR-AUT-005` - Cấu hình hành động Câu hỏi thường gặp | AC-004: GIVEN đổi action WHEN validate THEN field của action cũ không còn gây lỗi. |
-| `AC-AUT-005-05` | `FR-AUT-005` - Cấu hình hành động Câu hỏi thường gặp | AC-005: GIVEN action bổ sung hợp lệ WHEN lưu THEN action được giữ đúng thứ tự. |
-| `AC-AUT-006-01` | `FR-AUT-006` - Xuất bản và vận hành Câu hỏi thường gặp | AC-001: GIVEN draft hợp lệ WHEN publish thành công THEN khách thấy danh sách mới. |
-| `AC-AUT-006-02` | `FR-AUT-006` - Xuất bản và vận hành Câu hỏi thường gặp | AC-002: GIVEN publish thất bại WHEN hoàn tất THEN khách vẫn thấy version cũ và draft còn nguyên. |
-| `AC-AUT-006-03` | `FR-AUT-006` - Xuất bản và vận hành Câu hỏi thường gặp | AC-003: GIVEN không có thay đổi WHEN mở trang THEN nút publish bị vô hiệu hóa. |
-| `AC-AUT-006-04` | `FR-AUT-006` - Xuất bản và vận hành Câu hỏi thường gặp | AC-004: GIVEN khách bấm FAQ WHEN action hợp lệ THEN action chính chạy một lần và action bổ sung chạy đúng thứ tự. |
-| `AC-AUT-006-05` | `FR-AUT-006` - Xuất bản và vận hành Câu hỏi thường gặp | AC-005: GIVEN đang xem Preview WHEN tương tác THEN không có tin thật hoặc analytics phát sinh. |
-| `AC-AUT-007-01` | `FR-AUT-007` - Quản lý Tin nhắn mở đầu | AC-001: GIVEN chưa có cấu hình WHEN mở trang THEN thấy empty state và `Thêm mới`. |
-| `AC-AUT-007-02` | `FR-AUT-007` - Quản lý Tin nhắn mở đầu | AC-002: GIVEN cấu hình hợp lệ WHEN bật Kích hoạt THEN trạng thái được lưu. |
-| `AC-AUT-007-03` | `FR-AUT-007` - Quản lý Tin nhắn mở đầu | AC-003: GIVEN cấu hình rỗng WHEN bật THEN toggle không bật và có lỗi. |
-| `AC-AUT-007-04` | `FR-AUT-007` - Quản lý Tin nhắn mở đầu | AC-004: GIVEN chọn bước B WHEN xem THEN nội dung, thống kê và Preview hiển thị B. |
-| `AC-AUT-007-05` | `FR-AUT-007` - Quản lý Tin nhắn mở đầu | AC-005: GIVEN đổi trang WHEN tải xong THEN không hiển thị dữ liệu trang cũ. |
-| `AC-AUT-008-01` | `FR-AUT-008` - Biên tập luồng Tin nhắn mở đầu | AC-001: GIVEN editor mới WHEN mở THEN có bước đầu tiên và nội dung trống. |
-| `AC-AUT-008-02` | `FR-AUT-008` - Biên tập luồng Tin nhắn mở đầu | AC-002: GIVEN 640 ký tự WHEN nhập thêm THEN không nhận ký tự thứ 641. |
-| `AC-AUT-008-03` | `FR-AUT-008` - Biên tập luồng Tin nhắn mở đầu | AC-003: GIVEN bước không nội dung WHEN lưu THEN chặn và focus bước lỗi. |
-| `AC-AUT-008-04` | `FR-AUT-008` - Biên tập luồng Tin nhắn mở đầu | AC-004: GIVEN liên kết tạo cycle WHEN chọn THEN từ chối và báo lỗi. |
-| `AC-AUT-008-05` | `FR-AUT-008` - Biên tập luồng Tin nhắn mở đầu | AC-005: GIVEN nội dung đổi WHEN nhập THEN Preview cập nhật ngay. |
-| `AC-AUT-008-06` | `FR-AUT-008` - Biên tập luồng Tin nhắn mở đầu | AC-006: GIVEN bấm Xem thử WHEN chạy THEN không gửi tin hoặc tạo thống kê. |
-| `AC-AUT-009-01` | `FR-AUT-009` - Gửi và thống kê Tin nhắn mở đầu | AC-001: GIVEN session mới và cấu hình bật WHEN nhận tin đầu THEN gửi bước đầu đúng một lần. |
-| `AC-AUT-009-02` | `FR-AUT-009` - Gửi và thống kê Tin nhắn mở đầu | AC-002: GIVEN cùng session WHEN có tin tiếp theo THEN không gửi lại. |
-| `AC-AUT-009-03` | `FR-AUT-009` - Gửi và thống kê Tin nhắn mở đầu | AC-003: GIVEN event là click FAQ WHEN xử lý THEN không đồng thời gửi Tin nhắn mở đầu. |
-| `AC-AUT-009-04` | `FR-AUT-009` - Gửi và thống kê Tin nhắn mở đầu | AC-004: GIVEN gửi thành công WHEN xem thống kê THEN chỉ số step và tổng tăng đúng. |
-| `AC-AUT-009-05` | `FR-AUT-009` - Gửi và thống kê Tin nhắn mở đầu | AC-005: GIVEN Preview WHEN xem THEN không phát sinh thống kê. |
-| `AC-AUT-010-01` | `FR-AUT-010` - Quản lý Tin nhắn mặc định | AC-001: GIVEN cấu hình hợp lệ WHEN bật Kích hoạt THEN runtime được bật. |
-| `AC-AUT-010-02` | `FR-AUT-010` - Quản lý Tin nhắn mặc định | AC-002: GIVEN cấu hình rỗng WHEN bật THEN toggle giữ tắt và có thông báo. |
-| `AC-AUT-010-03` | `FR-AUT-010` - Quản lý Tin nhắn mặc định | AC-003: GIVEN chọn bước WHEN xem THEN thống kê và Preview đổi đúng bước. |
-| `AC-AUT-010-04` | `FR-AUT-010` - Quản lý Tin nhắn mặc định | AC-004: GIVEN gạt Kích hoạt WHEN API lỗi THEN UI rollback. |
-| `AC-AUT-010-05` | `FR-AUT-010` - Quản lý Tin nhắn mặc định | AC-005: GIVEN đổi trang WHEN tải xong THEN dữ liệu đúng trang mới. |
-| `AC-AUT-011-01` | `FR-AUT-011` - Biên tập luồng Tin nhắn mặc định | AC-001: GIVEN 640 ký tự WHEN nhập thêm THEN counter giữ `640/640`. |
-| `AC-AUT-011-02` | `FR-AUT-011` - Biên tập luồng Tin nhắn mặc định | AC-002: GIVEN title 20 ký tự WHEN nhập thêm THEN không nhận ký tự thứ 21. |
-| `AC-AUT-011-03` | `FR-AUT-011` - Biên tập luồng Tin nhắn mặc định | AC-003: GIVEN bước rỗng WHEN cập nhật THEN bị chặn và đánh dấu. |
-| `AC-AUT-011-04` | `FR-AUT-011` - Biên tập luồng Tin nhắn mặc định | AC-004: GIVEN next step tạo cycle WHEN chọn THEN báo lỗi. |
-| `AC-AUT-011-05` | `FR-AUT-011` - Biên tập luồng Tin nhắn mặc định | AC-005: GIVEN dữ liệu hợp lệ WHEN cập nhật THEN lưu thành công và Preview phản ánh version mới. |
-| `AC-AUT-011-06` | `FR-AUT-011` - Biên tập luồng Tin nhắn mặc định | AC-006: GIVEN Xem thử WHEN chạy THEN không gửi thật. |
-| `AC-AUT-012-01` | `FR-AUT-012` - Gửi và thống kê Tin nhắn mặc định | AC-001: GIVEN không match và hai toggle bật WHEN nhận tin THEN gửi bước đầu. |
-| `AC-AUT-012-02` | `FR-AUT-012` - Gửi và thống kê Tin nhắn mặc định | AC-002: GIVEN đã nhận trong 24 giờ WHEN có tin mới THEN không gửi lại. |
-| `AC-AUT-012-03` | `FR-AUT-012` - Gửi và thống kê Tin nhắn mặc định | AC-003: GIVEN keyword đã xử lý WHEN cùng event THEN default không chạy. |
-| `AC-AUT-012-04` | `FR-AUT-012` - Gửi và thống kê Tin nhắn mặc định | AC-004: GIVEN gửi thành công WHEN xem số liệu THEN metric step và tổng tăng đúng. |
-| `AC-AUT-012-05` | `FR-AUT-012` - Gửi và thống kê Tin nhắn mặc định | AC-005: GIVEN connector không hỗ trợ outside-24h WHEN chọn bước đó THEN không gửi trái capability. |
-| `AC-AUT-013-01` | `FR-AUT-013` - Danh sách và nhập hàng loạt Từ khóa | AC-001: GIVEN tab rỗng WHEN mở THEN thấy empty state đúng tab. |
-| `AC-AUT-013-02` | `FR-AUT-013` - Danh sách và nhập hàng loạt Từ khóa | AC-002: GIVEN từ khóa ở hai tab WHEN đổi tab THEN dữ liệu và order không trộn. |
-| `AC-AUT-013-03` | `FR-AUT-013` - Danh sách và nhập hàng loạt Từ khóa | AC-003: GIVEN file hợp lệ WHEN import THEN tạo đúng số dòng hợp lệ và báo các dòng lỗi. |
-| `AC-AUT-013-04` | `FR-AUT-013` - Danh sách và nhập hàng loạt Từ khóa | AC-004: GIVEN file vượt giới hạn WHEN tải lên THEN bị từ chối trước khi ghi. |
-| `AC-AUT-013-05` | `FR-AUT-013` - Danh sách và nhập hàng loạt Từ khóa | AC-005: GIVEN chọn ba dòng WHEN bulk disable THEN chỉ ba dòng chuyển tắt. |
-| `AC-AUT-013-06` | `FR-AUT-013` - Danh sách và nhập hàng loạt Từ khóa | AC-006: GIVEN kéo dòng C lên đầu WHEN lưu order THEN runtime ưu tiên C. |
-| `AC-AUT-014-01` | `FR-AUT-014` - Cấu hình và so khớp Từ khóa | AC-001: GIVEN chọn phạm vi WHEN hiển thị THEN đúng ô và nhãn xuất hiện. |
-| `AC-AUT-014-02` | `FR-AUT-014` - Cấu hình và so khớp Từ khóa | AC-002: GIVEN `Có chứa` A/B WHEN message chứa B THEN match. |
-| `AC-AUT-014-03` | `FR-AUT-014` - Cấu hình và so khớp Từ khóa | AC-003: GIVEN `Có chứa A` và `Không chứa B` WHEN message chứa cả A và B THEN không match. |
-| `AC-AUT-014-04` | `FR-AUT-014` - Cấu hình và so khớp Từ khóa | AC-004: GIVEN exact `Xin chào` WHEN message khác hoa thường và khoảng trắng ngoài THEN vẫn match. |
-| `AC-AUT-014-05` | `FR-AUT-014` - Cấu hình và so khớp Từ khóa | AC-005: GIVEN thiếu ô bắt buộc WHEN lưu THEN popup không đóng và báo lỗi. |
-| `AC-AUT-014-06` | `FR-AUT-014` - Cấu hình và so khớp Từ khóa | AC-006: GIVEN tab Cho trang WHEN inbound message THEN keyword không được xét. |
-| `AC-AUT-015-01` | `FR-AUT-015` - Phản hồi và vận hành Từ khóa | AC-001: GIVEN keyword chưa có response WHEN bật THEN bị chặn. |
-| `AC-AUT-015-02` | `FR-AUT-015` - Phản hồi và vận hành Từ khóa | AC-002: GIVEN hai keyword cùng match WHEN xử lý THEN chỉ keyword order cao hơn chạy. |
-| `AC-AUT-015-03` | `FR-AUT-015` - Phản hồi và vận hành Từ khóa | AC-003: GIVEN keyword active match WHEN xử lý THEN response gửi một lần và lượt khớp tăng một. |
-| `AC-AUT-015-04` | `FR-AUT-015` - Phản hồi và vận hành Từ khóa | AC-004: GIVEN keyword match WHEN default message cũng đủ điều kiện THEN chỉ keyword response được gửi. |
-| `AC-AUT-015-05` | `FR-AUT-015` - Phản hồi và vận hành Từ khóa | AC-005: GIVEN target bị xóa WHEN runtime hoặc validate THEN keyword bị đánh dấu cần sửa và không chạy. |
-| `AC-AUT-015-06` | `FR-AUT-015` - Phản hồi và vận hành Từ khóa | AC-006: GIVEN Xem thử WHEN chạy THEN không gửi thật hoặc tăng lượt khớp. |
-| `AC-AUT-016-01` | `FR-AUT-016` - Danh mục Kịch bản chăm sóc | AC-001: GIVEN không có kịch bản WHEN mở THEN thấy empty state. |
-| `AC-AUT-016-02` | `FR-AUT-016` - Danh mục Kịch bản chăm sóc | AC-002: GIVEN tên hợp lệ WHEN tạo THEN kịch bản rỗng được tạo đúng trang. |
-| `AC-AUT-016-03` | `FR-AUT-016` - Danh mục Kịch bản chăm sóc | AC-003: GIVEN tên trùng WHEN tạo/đổi tên THEN bị chặn. |
-| `AC-AUT-016-04` | `FR-AUT-016` - Danh mục Kịch bản chăm sóc | AC-004: GIVEN kịch bản có bước và subscriber WHEN sao chép THEN bản sao có bước nhưng 0 subscriber và 0 stats. |
-| `AC-AUT-016-05` | `FR-AUT-016` - Danh mục Kịch bản chăm sóc | AC-005: GIVEN không có quyền trang đích WHEN sao chép chéo trang THEN bị từ chối. |
-| `AC-AUT-016-06` | `FR-AUT-016` - Danh mục Kịch bản chăm sóc | AC-006: GIVEN xác nhận xóa WHEN hoàn tất THEN lịch tương lai của kịch bản bị hủy. |
-| `AC-AUT-017-01` | `FR-AUT-017` - Cấu hình bước Kịch bản chăm sóc | AC-001: GIVEN chọn Tin nhắn WHEN lưu schedule THEN mở editor Tin nhắn. |
-| `AC-AUT-017-02` | `FR-AUT-017` - Cấu hình bước Kịch bản chăm sóc | AC-002: GIVEN chọn Hành động WHEN lưu schedule THEN mở action picker. |
-| `AC-AUT-017-03` | `FR-AUT-017` - Cấu hình bước Kịch bản chăm sóc | AC-003: GIVEN schedule lỗi WHEN lưu THEN popup không đóng. |
-| `AC-AUT-017-04` | `FR-AUT-017` - Cấu hình bước Kịch bản chăm sóc | AC-004: GIVEN bước chưa hoàn tất WHEN bật THEN bị chặn. |
-| `AC-AUT-017-05` | `FR-AUT-017` - Cấu hình bước Kịch bản chăm sóc | AC-005: GIVEN sửa offset của bước chưa chạy WHEN lưu THEN job tương lai được tính lại một lần. |
-| `AC-AUT-017-06` | `FR-AUT-017` - Cấu hình bước Kịch bản chăm sóc | AC-006: GIVEN xóa bước đã chạy một phần WHEN xác nhận THEN job tương lai bị hủy, lịch sử giữ nguyên. |
-| `AC-AUT-018-01` | `FR-AUT-018` - Đăng ký và thực thi Kịch bản chăm sóc | AC-001: GIVEN đăng ký hợp lệ WHEN xử lý THEN tạo đúng một subscription và lịch cho các bước active. |
-| `AC-AUT-018-02` | `FR-AUT-018` - Đăng ký và thực thi Kịch bản chăm sóc | AC-002: GIVEN cùng request lặp WHEN xử lý THEN không tạo job trùng. |
-| `AC-AUT-018-03` | `FR-AUT-018` - Đăng ký và thực thi Kịch bản chăm sóc | AC-003: GIVEN job đến hạn và filter đạt WHEN chạy THEN thực thi đúng một lần. |
-| `AC-AUT-018-04` | `FR-AUT-018` - Đăng ký và thực thi Kịch bản chăm sóc | AC-004: GIVEN bước bị tắt trước giờ chạy WHEN job đến THEN không thực thi. |
-| `AC-AUT-018-05` | `FR-AUT-018` - Đăng ký và thực thi Kịch bản chăm sóc | AC-005: GIVEN hủy đăng ký WHEN hoàn tất THEN job tương lai bị hủy, lịch sử giữ nguyên. |
-| `AC-AUT-018-06` | `FR-AUT-018` - Đăng ký và thực thi Kịch bản chăm sóc | AC-006: GIVEN execution thành công WHEN xem thống kê THEN Đã gửi và tỷ lệ cập nhật đúng. |
-| `AC-AUT-019-01` | `FR-AUT-019` - Danh mục Quy luật | AC-001: GIVEN tên hợp lệ WHEN tạo THEN rule tắt, `Chưa hoàn tất`, mở Chi tiết. |
-| `AC-AUT-019-02` | `FR-AUT-019` - Danh mục Quy luật | AC-002: GIVEN tên trùng WHEN tạo THEN bị chặn. |
-| `AC-AUT-019-03` | `FR-AUT-019` - Danh mục Quy luật | AC-003: GIVEN rule incomplete WHEN bật THEN toggle giữ tắt và có lỗi. |
-| `AC-AUT-019-04` | `FR-AUT-019` - Danh mục Quy luật | AC-004: GIVEN rule complete WHEN bật THEN có hiệu lực với event mới. |
-| `AC-AUT-019-05` | `FR-AUT-019` - Danh mục Quy luật | AC-005: GIVEN rule có lịch sử WHEN nhân bản THEN bản sao không có lịch sử và mặc định tắt. |
-| `AC-AUT-019-06` | `FR-AUT-019` - Danh mục Quy luật | AC-006: GIVEN xem nhanh WHEN mở THEN summary đúng và dữ liệu không đổi. |
-| `AC-AUT-020-01` | `FR-AUT-020` - Cấu hình sự kiện và điều kiện Quy luật | AC-001: GIVEN khung rỗng WHEN xem THEN thấy nút thêm trigger. |
-| `AC-AUT-020-02` | `FR-AUT-020` - Cấu hình sự kiện và điều kiện Quy luật | AC-002: GIVEN chọn event Đã gắn Thẻ WHEN thêm THEN hiện trường chọn Thẻ. |
-| `AC-AUT-020-03` | `FR-AUT-020` - Cấu hình sự kiện và điều kiện Quy luật | AC-003: GIVEN filter thiếu value WHEN lưu THEN đúng filter bị đánh dấu. |
-| `AC-AUT-020-04` | `FR-AUT-020` - Cấu hình sự kiện và điều kiện Quy luật | AC-004: GIVEN hai trigger WHEN event khớp một trigger và filter đạt THEN phần điều kiện đạt. |
-| `AC-AUT-020-05` | `FR-AUT-020` - Cấu hình sự kiện và điều kiện Quy luật | AC-005: GIVEN reference bị xóa WHEN validate THEN rule bị gắn cần cấu hình lại và không active. |
-| `AC-AUT-020-06` | `FR-AUT-020` - Cấu hình sự kiện và điều kiện Quy luật | AC-006: GIVEN xóa trigger cuối WHEN lưu THEN rule incomplete. |
-| `AC-AUT-021-01` | `FR-AUT-021` - Cấu hình hành động và thực thi Quy luật | AC-001: GIVEN không có action WHEN lưu THEN bị chặn. |
-| `AC-AUT-021-02` | `FR-AUT-021` - Cấu hình hành động và thực thi Quy luật | AC-002: GIVEN hai action hợp lệ WHEN event match THEN chạy đúng thứ tự. |
-| `AC-AUT-021-03` | `FR-AUT-021` - Cấu hình hành động và thực thi Quy luật | AC-003: GIVEN action đầu lỗi với policy dừng WHEN chạy THEN action sau không chạy. |
-| `AC-AUT-021-04` | `FR-AUT-021` - Cấu hình hành động và thực thi Quy luật | AC-004: GIVEN frequency một lần đã hoàn tất WHEN event mới của cùng khách đến THEN rule không chạy lại. |
-| `AC-AUT-021-05` | `FR-AUT-021` - Cấu hình hành động và thực thi Quy luật | AC-005: GIVEN event lặp WHEN nhận lại THEN không tạo side effect trùng. |
-| `AC-AUT-021-06` | `FR-AUT-021` - Cấu hình hành động và thực thi Quy luật | AC-006: GIVEN action tạo event quay lại rule WHEN vượt loop guard THEN chain dừng và có log. |
-| `AC-AUT-021-07` | `FR-AUT-021` - Cấu hình hành động và thực thi Quy luật | AC-007: GIVEN reference bị xóa WHEN validate THEN rule tự tắt và hiển thị cần cấu hình lại. |
-
 ## Quy ước
 
-- Mã có cấu trúc `AC-AUT-[Mã FR]-[Số thứ tự]`.
-- Mỗi AC phải kiểm thử được độc lập và truy vết về đúng một FR chính.
-- Khi BR hoặc luồng nghiệp vụ thay đổi, phải cập nhật các AC chịu ảnh hưởng.
+- Mỗi AC dùng cấu trúc GIVEN - WHEN - THEN và có thể chuyển trực tiếp thành test case.
+- AC chỉ kiểm thử phạm vi của FR Owner; kiểm thử tích hợp được dẫn chiếu bằng Dependency.
+- Kết quả THEN phải tuân theo BR cùng số thứ tự của FR tương ứng.
+
+## FR-AUT-001: Phạm vi trang và phân quyền
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-001-01 | GIVEN người dùng đã đăng nhập và mở Automation; WHEN chưa chọn trang; THEN Chỉ tải dữ liệu Automation sau khi có `activePageId` hợp lệ. |
+| AC-AUT-001-02 | GIVEN người dùng đã đăng nhập và mở Automation; WHEN người dùng mở hoặc thao tác trên trang; THEN Người dùng chỉ được xem hoặc sửa theo quyền trên trang đang chọn. |
+| AC-AUT-001-03 | GIVEN người dùng đã đăng nhập và mở Automation; WHEN trang đang chọn mất kết nối; THEN Trang mất kết nối phải được hiển thị trạng thái và chặn thao tác cần connector. |
+| AC-AUT-001-04 | GIVEN người dùng đã đăng nhập và mở Automation; WHEN người dùng đổi sang trang khác khi có thay đổi chưa lưu; THEN Đổi trang khi có dữ liệu chưa lưu phải yêu cầu người dùng xác nhận. |
+
+## FR-AUT-002: Trình soạn nội dung tin nhắn
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-002-01 | GIVEN người dùng có quyền chỉnh sửa và đang mở trình soạn; WHEN người dùng lưu một bước nội dung; THEN Mỗi bước phải có ít nhất một block nội dung hợp lệ. |
+| AC-AUT-002-02 | GIVEN người dùng có quyền chỉnh sửa và đang mở trình soạn; WHEN người dùng liên kết bước tiếp theo; THEN Liên kết `nextStepId` phải trỏ đến bước tồn tại và không tạo vòng lặp ngoài quy tắc cho phép. |
+| AC-AUT-002-03 | GIVEN người dùng có quyền chỉnh sửa và đang mở trình soạn; WHEN người dùng thêm media, template hoặc biến; THEN Media, template và biến phải tương thích với capability của kênh. |
+| AC-AUT-002-04 | GIVEN người dùng có quyền chỉnh sửa và đang mở trình soạn; WHEN người dùng thêm nút hoặc trả lời nhanh; THEN Nút và trả lời nhanh phải dùng schema action do FR-AUT-003 cung cấp. |
+| AC-AUT-002-05 | GIVEN người dùng có quyền chỉnh sửa và đang mở trình soạn; WHEN người dùng chọn Xem thử; THEN Preview phải phản ánh bản nháp hiện tại nhưng không tạo event gửi thật. |
+
+## FR-AUT-003: Nút và hành động dùng chung
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-003-01 | GIVEN popup cấu hình action đang mở; WHEN người dùng chọn action cho nút; THEN Mỗi nút chỉ có một action chính. |
+| AC-AUT-003-02 | GIVEN popup cấu hình action đang mở; WHEN người dùng lưu action; THEN Các trường target bắt buộc được xác định theo loại action. |
+| AC-AUT-003-03 | GIVEN popup cấu hình action đang mở; WHEN kênh không hỗ trợ một loại action; THEN Action không được hỗ trợ bởi kênh phải bị ẩn hoặc vô hiệu hóa có giải thích. |
+| AC-AUT-003-04 | GIVEN popup cấu hình action đang mở; WHEN người dùng đổi loại action; THEN Thay đổi loại action phải xóa các trường không còn thuộc schema mới. |
+| AC-AUT-003-05 | GIVEN popup cấu hình action đang mở; WHEN người dùng thêm action bổ sung; THEN Action bổ sung chỉ được lưu khi thỏa điều kiện của nghiệp vụ gọi. |
+
+## FR-AUT-004: Bản nháp và xuất bản
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-004-01 | GIVEN người dùng đang chỉnh sửa một cấu hình Automation; WHEN người dùng thay đổi và lưu nháp; THEN Chỉnh sửa chỉ tác động bản nháp cho đến khi xuất bản thành công. |
+| AC-AUT-004-02 | GIVEN người dùng đang chỉnh sửa một cấu hình Automation; WHEN người dùng chọn Xuất bản với dữ liệu lỗi; THEN Chỉ cấu hình vượt qua toàn bộ validation mới được xuất bản. |
+| AC-AUT-004-03 | GIVEN người dùng đang chỉnh sửa một cấu hình Automation; WHEN xuất bản hoàn tất; THEN Mỗi lần xuất bản thành công phải tạo phiên bản có thể truy vết. |
+| AC-AUT-004-04 | GIVEN người dùng đang chỉnh sửa một cấu hình Automation; WHEN dữ liệu trên máy chủ đã có phiên bản mới hơn; THEN Xung đột phiên bản phải được phát hiện trước khi ghi đè. |
+| AC-AUT-004-05 | GIVEN người dùng đang chỉnh sửa một cấu hình Automation; WHEN đồng bộ connector thất bại; THEN Lỗi đồng bộ connector không được làm mất bản nháp và phải cho phép retry an toàn. |
+
+## FR-AUT-005: Danh mục Menu chính
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-005-01 | GIVEN người dùng có quyền quản lý Menu chính trên trang đang chọn; WHEN người dùng tải hoặc tạo danh mục menu; THEN Mỗi trang có đúng một Menu mặc định; Menu tùy chỉnh có tên phân biệt theo quy tắc hệ thống. |
+| AC-AUT-005-02 | GIVEN người dùng có quyền quản lý Menu chính trên trang đang chọn; WHEN người dùng yêu cầu xóa Menu mặc định; THEN Không cho xóa Menu mặc định. |
+| AC-AUT-005-03 | GIVEN người dùng có quyền quản lý Menu chính trên trang đang chọn; WHEN người dùng xóa Menu tùy chỉnh đang được gán; THEN Không cho xóa Menu tùy chỉnh đang còn được gán nếu chưa xử lý fallback. |
+| AC-AUT-005-04 | GIVEN người dùng có quyền quản lý Menu chính trên trang đang chọn; WHEN người dùng nhân bản một menu; THEN Nhân bản menu chỉ sao chép cấu hình, không sao chép assignment hoặc analytics. |
+
+## FR-AUT-006: Cấu trúc Menu chính
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-006-01 | GIVEN người dùng đang chỉnh sửa một menu; WHEN menu đã có 20 mục và người dùng thêm mục; THEN Một menu có tối đa 20 mục. |
+| AC-AUT-006-02 | GIVEN người dùng đang chỉnh sửa một menu; WHEN người dùng lưu tiêu đề mục; THEN Tiêu đề mục menu là bắt buộc và tối đa 30 ký tự. |
+| AC-AUT-006-03 | GIVEN người dùng đang chỉnh sửa một menu; WHEN người dùng xuất bản menu có mục thiếu action; THEN Mỗi mục phải có action hợp lệ trước khi publish. |
+| AC-AUT-006-04 | GIVEN người dùng đang chỉnh sửa một menu; WHEN người dùng thay đổi thứ tự và lưu; THEN Thứ tự hiển thị phải theo thứ tự người dùng đã lưu. |
+| AC-AUT-006-05 | GIVEN người dùng đang chỉnh sửa một menu; WHEN người dùng chọn menu đích cho thao tác chuyển menu; THEN Chuyển menu chỉ được trỏ tới Menu tùy chỉnh hợp lệ của cùng trang. |
+
+## FR-AUT-007: Phân phối Menu chính
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-007-01 | GIVEN khách hàng tương tác với trang có cấu hình menu; WHEN khách không có assignment hợp lệ mở menu; THEN Khách không có assignment hợp lệ phải nhìn thấy Menu mặc định. |
+| AC-AUT-007-02 | GIVEN khách hàng tương tác với trang có cấu hình menu; WHEN hệ thống tạo hoặc cập nhật assignment; THEN Assignment Menu tùy chỉnh chỉ áp dụng trong cùng trang. |
+| AC-AUT-007-03 | GIVEN khách hàng tương tác với trang có cấu hình menu; WHEN hệ thống nhận lại cùng một click; THEN Mỗi click chỉ được thực thi một lần theo khóa idempotency. |
+| AC-AUT-007-04 | GIVEN khách hàng tương tác với trang có cấu hình menu; WHEN menu đang được gán không còn hợp lệ; THEN Khi menu được gán không còn hợp lệ, hệ thống phải fallback và ghi nhận nguyên nhân. |
+
+## FR-AUT-008: Quản lý FAQ
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-008-01 | GIVEN người dùng đang cấu hình FAQ của một trang; WHEN đã có 4 câu hỏi và người dùng thêm câu hỏi; THEN Mỗi trang có tối đa 4 câu hỏi FAQ đang cấu hình. |
+| AC-AUT-008-02 | GIVEN người dùng đang cấu hình FAQ của một trang; WHEN người dùng lưu câu hỏi; THEN Nội dung câu hỏi là bắt buộc và không được chỉ gồm khoảng trắng. |
+| AC-AUT-008-03 | GIVEN người dùng đang cấu hình FAQ của một trang; WHEN người dùng xuất bản FAQ thiếu action; THEN Mỗi câu hỏi phải có action chính hợp lệ trước khi publish. |
+| AC-AUT-008-04 | GIVEN người dùng đang cấu hình FAQ của một trang; WHEN người dùng thay đổi thứ tự FAQ và lưu; THEN Thứ tự FAQ trên kênh phải theo thứ tự đã lưu. |
+
+## FR-AUT-009: Runtime FAQ
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-009-01 | GIVEN khách hàng mở hoặc tương tác với FAQ trên kênh; WHEN hệ thống tải FAQ để hiển thị; THEN Chỉ FAQ của phiên bản published được hiển thị. |
+| AC-AUT-009-02 | GIVEN khách hàng mở hoặc tương tác với FAQ trên kênh; WHEN danh sách FAQ được hiển thị; THEN FAQ phải được hiển thị đúng thứ tự cấu hình. |
+| AC-AUT-009-03 | GIVEN khách hàng mở hoặc tương tác với FAQ trên kênh; WHEN hệ thống nhận lại cùng một click FAQ; THEN Một click FAQ chỉ được chạy action một lần. |
+| AC-AUT-009-04 | GIVEN khách hàng mở hoặc tương tác với FAQ trên kênh; WHEN khách xem hoặc bấm FAQ; THEN Event hiển thị, click và kết quả action phải được ghi theo FAQ và trang. |
+
+## FR-AUT-010: Cấu hình Tin nhắn mở đầu
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-010-01 | GIVEN người dùng có quyền cấu hình Tin nhắn mở đầu; WHEN người dùng mở cấu hình của trang; THEN Mỗi trang chỉ có một cấu hình Tin nhắn mở đầu có hiệu lực. |
+| AC-AUT-010-02 | GIVEN người dùng có quyền cấu hình Tin nhắn mở đầu; WHEN người dùng bật cấu hình chưa có nội dung hợp lệ; THEN Chỉ được bật khi có content graph hợp lệ. |
+| AC-AUT-010-03 | GIVEN người dùng có quyền cấu hình Tin nhắn mở đầu; WHEN người dùng tắt cấu hình; THEN Tắt cấu hình không được xóa bản nháp hoặc lịch sử phiên bản. |
+| AC-AUT-010-04 | GIVEN người dùng có quyền cấu hình Tin nhắn mở đầu; WHEN người dùng xuất bản cấu hình; THEN Publish phải dùng lifecycle của FR-AUT-004. |
+
+## FR-AUT-011: Runtime Tin nhắn mở đầu
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-011-01 | GIVEN khách hàng bắt đầu tương tác với trang; WHEN hệ thống xác định một phiên hội thoại mới; THEN Tin nhắn chỉ được gửi khi bắt đầu phiên hội thoại mới theo định nghĩa hệ thống. |
+| AC-AUT-011-02 | GIVEN khách hàng bắt đầu tương tác với trang; WHEN hệ thống nhận nhiều trigger trong cùng phiên; THEN Mỗi phiên chỉ được gửi Tin nhắn mở đầu một lần. |
+| AC-AUT-011-03 | GIVEN khách hàng bắt đầu tương tác với trang; WHEN cấu hình chỉ là bản nháp hoặc đang tắt; THEN Chỉ dùng cấu hình đang bật và published. |
+| AC-AUT-011-04 | GIVEN khách hàng bắt đầu tương tác với trang; WHEN hệ thống gửi tin và khách tương tác; THEN Kết quả gửi và tương tác phải được ghi theo phiên, bước và trang. |
+
+## FR-AUT-012: Cấu hình Tin nhắn mặc định
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-012-01 | GIVEN người dùng có quyền cấu hình Tin nhắn mặc định; WHEN người dùng mở cấu hình của trang; THEN Mỗi trang chỉ có một cấu hình fallback có hiệu lực. |
+| AC-AUT-012-02 | GIVEN người dùng có quyền cấu hình Tin nhắn mặc định; WHEN người dùng bật cấu hình có dữ liệu lỗi; THEN Chỉ được bật khi content graph và tần suất hợp lệ. |
+| AC-AUT-012-03 | GIVEN người dùng có quyền cấu hình Tin nhắn mặc định; WHEN người dùng lưu trạng thái cấu hình; THEN Cờ mặc định và trạng thái bật phải được lưu độc lập theo schema. |
+| AC-AUT-012-04 | GIVEN người dùng có quyền cấu hình Tin nhắn mặc định; WHEN người dùng xuất bản cấu hình; THEN Publish phải dùng lifecycle của FR-AUT-004. |
+
+## FR-AUT-013: Runtime Tin nhắn mặc định
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-013-01 | GIVEN hệ thống nhận một tin nhắn đến từ khách; WHEN một bộ xử lý ưu tiên cao hơn đã xử lý tin; THEN Chỉ kích hoạt sau khi các bộ xử lý ưu tiên cao hơn không xử lý tin đến. |
+| AC-AUT-013-02 | GIVEN hệ thống nhận một tin nhắn đến từ khách; WHEN fallback được xem xét cho khách; THEN Tần suất gửi phải tuân theo cấu hình của khách và trang. |
+| AC-AUT-013-03 | GIVEN hệ thống nhận một tin nhắn đến từ khách; WHEN hệ thống chuẩn bị gửi fallback; THEN Bước gửi phải phù hợp với cửa sổ nhắn tin của kênh. |
+| AC-AUT-013-04 | GIVEN hệ thống nhận một tin nhắn đến từ khách; WHEN hệ thống đánh giá hoặc gửi fallback; THEN Mỗi lần đánh giá và gửi phải được ghi nhận để thống kê và chống lặp. |
+
+## FR-AUT-014: Danh mục và nhập Từ khóa
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-014-01 | GIVEN người dùng có quyền quản lý Từ khóa; WHEN người dùng tạo hoặc import từ khóa; THEN Từ khóa phải thuộc đúng một hướng xử lý: Cho khách hàng hoặc Cho trang. |
+| AC-AUT-014-02 | GIVEN người dùng có quyền quản lý Từ khóa; WHEN người dùng tải file import; THEN File import phải được kiểm tra định dạng và báo lỗi theo dòng. |
+| AC-AUT-014-03 | GIVEN người dùng có quyền quản lý Từ khóa; WHEN người dùng chạy thao tác hàng loạt; THEN Thao tác hàng loạt chỉ áp dụng cho các bản ghi người dùng đã chọn và có quyền. |
+| AC-AUT-014-04 | GIVEN người dùng có quyền quản lý Từ khóa; WHEN người dùng sắp xếp và lưu danh sách; THEN Thứ tự ưu tiên phải duy nhất và được lưu ổn định trong từng phạm vi. |
+
+## FR-AUT-015: Điều kiện khớp Từ khóa
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-015-01 | GIVEN người dùng đang cấu hình biểu thức của một từ khóa; WHEN người dùng lưu biểu thức không có giá trị khớp; THEN Biểu thức phải có ít nhất một giá trị khớp hợp lệ. |
+| AC-AUT-015-02 | GIVEN người dùng đang cấu hình biểu thức của một từ khóa; WHEN người dùng nhập và lưu giá trị; THEN Giá trị phải được normalize nhất quán trước khi lưu và so khớp. |
+| AC-AUT-015-03 | GIVEN người dùng đang cấu hình biểu thức của một từ khóa; WHEN người dùng chọn toán tử hoặc tạo nhóm; THEN Toán tử và nhóm điều kiện phải đúng kiểu dữ liệu được hỗ trợ. |
+| AC-AUT-015-04 | GIVEN người dùng đang cấu hình biểu thức của một từ khóa; WHEN người dùng kiểm tra thử một thông điệp; THEN Preview kiểm tra khớp phải dùng cùng logic với runtime. |
+
+## FR-AUT-016: Phản hồi Từ khóa
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-016-01 | GIVEN hệ thống có danh sách từ khóa của trang; WHEN người dùng bật một từ khóa; THEN Từ khóa chỉ được bật khi biểu thức và response đều hợp lệ. |
+| AC-AUT-016-02 | GIVEN hệ thống có danh sách từ khóa của trang; WHEN một thông điệp khớp nhiều từ khóa; THEN Khi nhiều từ khóa khớp, chỉ từ khóa có ưu tiên cao nhất được chọn theo thứ tự đã lưu. |
+| AC-AUT-016-03 | GIVEN hệ thống có danh sách từ khóa của trang; WHEN hệ thống gửi phản hồi của từ khóa thắng; THEN Response phải dùng content graph hợp lệ của FR-AUT-002. |
+| AC-AUT-016-04 | GIVEN hệ thống có danh sách từ khóa của trang; WHEN hệ thống hoàn tất xử lý thông điệp; THEN Match, từ khóa thắng và kết quả gửi phải được ghi để truy vết. |
+
+## FR-AUT-017: Danh mục Kịch bản chăm sóc
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-017-01 | GIVEN người dùng có quyền quản lý Kịch bản chăm sóc; WHEN người dùng tạo hoặc đổi tên kịch bản; THEN Tên kịch bản là bắt buộc và tuân theo quy tắc duy nhất của trang. |
+| AC-AUT-017-02 | GIVEN người dùng có quyền quản lý Kịch bản chăm sóc; WHEN người dùng bật kịch bản chưa có bước hợp lệ; THEN Chỉ kịch bản có cấu hình bước hợp lệ mới được bật. |
+| AC-AUT-017-03 | GIVEN người dùng có quyền quản lý Kịch bản chăm sóc; WHEN người dùng xóa kịch bản đang có enrollment hoạt động; THEN Không xóa kịch bản đang có enrollment hoạt động. |
+| AC-AUT-017-04 | GIVEN người dùng có quyền quản lý Kịch bản chăm sóc; WHEN người dùng sao chép kịch bản; THEN Sao chép chỉ sao chép cấu hình, không sao chép enrollment hoặc analytics. |
+
+## FR-AUT-018: Bước Kịch bản chăm sóc
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-018-01 | GIVEN người dùng đang chỉnh sửa các bước của một kịch bản; WHEN người dùng lưu một bước; THEN Mỗi bước phải có loại, thứ tự và cấu hình bắt buộc tương ứng. |
+| AC-AUT-018-02 | GIVEN người dùng đang chỉnh sửa các bước của một kịch bản; WHEN người dùng nhập thời gian chờ; THEN Thời gian chờ phải nằm trong giới hạn được hệ thống hỗ trợ. |
+| AC-AUT-018-03 | GIVEN người dùng đang chỉnh sửa các bước của một kịch bản; WHEN người dùng sắp xếp và lưu các bước; THEN Thứ tự bước phải liên tục và duy nhất trong kịch bản. |
+| AC-AUT-018-04 | GIVEN người dùng đang chỉnh sửa các bước của một kịch bản; WHEN người dùng gắn nội dung hoặc action; THEN Nội dung và action phải tuân theo contract của FR-AUT-002 và FR-AUT-003. |
+| AC-AUT-018-05 | GIVEN người dùng đang chỉnh sửa các bước của một kịch bản; WHEN người dùng sửa hoặc xóa bước của kịch bản đang có lượt chạy; THEN Xóa hoặc sửa bước không được tự ý thay đổi enrollment đang chạy ngoài chính sách phiên bản. |
+
+## FR-AUT-019: Runtime Kịch bản chăm sóc
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-019-01 | GIVEN kịch bản đang bật và có cấu hình hợp lệ; WHEN hệ thống nhận yêu cầu đăng ký khách; THEN Một yêu cầu đăng ký phải có khóa chống trùng. |
+| AC-AUT-019-02 | GIVEN kịch bản đang bật và có cấu hình hợp lệ; WHEN một enrollment được tạo; THEN Mỗi enrollment phải cố định phiên bản cấu hình dùng để chạy. |
+| AC-AUT-019-03 | GIVEN kịch bản đang bật và có cấu hình hợp lệ; WHEN đến hạn chạy một bước; THEN Bước chỉ được gửi khi đến hạn và khách vẫn đủ điều kiện. |
+| AC-AUT-019-04 | GIVEN kịch bản đang bật và có cấu hình hợp lệ; WHEN một bước thất bại tạm thời và được retry; THEN Retry không được gửi lặp bước đã thành công. |
+| AC-AUT-019-05 | GIVEN kịch bản đang bật và có cấu hình hợp lệ; WHEN enrollment hoặc step thay đổi trạng thái; THEN Mọi chuyển trạng thái enrollment và step phải có lịch sử truy vết. |
+
+## FR-AUT-020: Cấu hình Quy luật tự động
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-020-01 | GIVEN người dùng đang tạo hoặc chỉnh sửa một quy luật; WHEN người dùng lưu trigger; THEN Mỗi quy luật phải có đúng một trigger hợp lệ. |
+| AC-AUT-020-02 | GIVEN người dùng đang tạo hoặc chỉnh sửa một quy luật; WHEN người dùng lưu cây điều kiện; THEN Cây điều kiện phải hợp lệ về toán tử, kiểu dữ liệu và cấu trúc. |
+| AC-AUT-020-03 | GIVEN người dùng đang tạo hoặc chỉnh sửa một quy luật; WHEN người dùng bật quy luật; THEN Quy luật phải có ít nhất một action hợp lệ trước khi bật. |
+| AC-AUT-020-04 | GIVEN người dùng đang tạo hoặc chỉnh sửa một quy luật; WHEN người dùng sắp xếp và lưu action; THEN Thứ tự action phải được lưu và dùng làm thứ tự thực thi. |
+| AC-AUT-020-05 | GIVEN người dùng đang tạo hoặc chỉnh sửa một quy luật; WHEN một tài nguyên được tham chiếu không còn tồn tại; THEN Tài nguyên tham chiếu không tồn tại phải làm cấu hình mất hiệu lực cho đến khi sửa. |
+
+## FR-AUT-021: Runtime Quy luật tự động
+
+| Mã AC | Kịch bản GIVEN - WHEN - THEN |
+| --- | --- |
+| AC-AUT-021-01 | GIVEN hệ thống nhận event thuộc loại được hỗ trợ; WHEN hệ thống nhận lại event có cùng idempotency key; THEN Mỗi event chỉ được xử lý một lần theo idempotency key. |
+| AC-AUT-021-02 | GIVEN hệ thống nhận event thuộc loại được hỗ trợ; WHEN hệ thống bắt đầu một lần chạy quy luật; THEN Một lần chạy phải cố định phiên bản quy luật trước khi đánh giá. |
+| AC-AUT-021-03 | GIVEN hệ thống nhận event thuộc loại được hỗ trợ; WHEN hệ thống chuẩn bị chạy action; THEN Chỉ chạy action khi trigger và toàn bộ cây điều kiện cần thiết thỏa mãn. |
+| AC-AUT-021-04 | GIVEN hệ thống nhận event thuộc loại được hỗ trợ; WHEN hệ thống chạy danh sách action; THEN Action phải chạy theo thứ tự và chính sách dừng hoặc tiếp tục đã cấu hình. |
+| AC-AUT-021-05 | GIVEN hệ thống nhận event thuộc loại được hỗ trợ; WHEN một action thất bại tạm thời và được retry; THEN Retry không được lặp lại action đã hoàn tất thành công. |
+
+
