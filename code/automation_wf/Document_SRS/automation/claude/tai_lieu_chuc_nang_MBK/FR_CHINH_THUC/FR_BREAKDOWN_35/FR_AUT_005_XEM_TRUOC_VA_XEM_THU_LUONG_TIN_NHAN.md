@@ -1,0 +1,16 @@
+# FR-AUT-005: Xem trước và xem thử luồng tin nhắn
+
+| Mục | Nội dung |
+| --- | --- |
+| Mô tả | Cho phép kiểm tra cách hiển thị, biến thông tin, nhánh tương tác và trình tự bước trước khi áp dụng cho khách. Xem trước mô phỏng ngay trên màn hình; xem thử có thể chạy luồng trong môi trường thử nghiệm được tách khỏi dữ liệu thật. |
+| Đối tượng liên quan | **Người quản trị/UI-UX/QA:** kiểm tra nội dung và hành vi.<br>**Hệ thống:** mô phỏng đúng phiên bản bản nháp mà không tạo tác động thật. |
+| Pre-conditions | Người dùng có quyền xem bản nháp; luồng có ít nhất một bước; dữ liệu mẫu hoặc đối tượng thử nghiệm được xác định. |
+| Điều kiện kích hoạt | Người dùng chỉnh sửa nội dung hoặc bấm **Xem trước/Xem thử**. |
+| Luồng xử lý chính | 1. Hệ thống hiển thị bản xem trước theo kênh/thiết bị đã chọn.<br>2. Người dùng chọn dữ liệu mẫu và bắt đầu xem thử.<br>3. Hệ thống chạy các bước, nút, trả lời nhanh và điều kiện trong chế độ thử.<br>4. Người dùng quan sát nội dung, thứ tự, nhánh và lỗi.<br>5. Hệ thống hiển thị kết quả từng bước nhưng không gửi cho khách thật hoặc cập nhật dữ liệu thật. |
+| Post-condition | Người dùng xác định được nội dung và nhánh hoạt động như mong đợi; việc xem thử không ảnh hưởng hoạt động hoặc số liệu thực tế. |
+| Luồng thay thế | - Thiếu dữ liệu mẫu cho biến bắt buộc: hiển thị cảnh báo và cho chọn giá trị mẫu.<br>- Bước/hành động chưa hoàn tất: đánh dấu trong kết quả và không chạy tiếp nhánh phụ thuộc.<br>- Kênh không hỗ trợ loại nội dung: mô phỏng lỗi như khi áp dụng.<br>- Xem thử hết thời gian: kết thúc phiên thử và giữ báo cáo.<br>- Người dùng chọn đối tượng thật: yêu cầu xác nhận rõ nếu sản phẩm có chế độ gửi thử thật. |
+| Sub-flow | **Xem trước:** cập nhật trực tiếp, không tạo phiên chạy.<br>**Xem thử:** tạo phiên thử riêng, có thể chọn nhánh/giá trị mẫu.<br>**Gửi thử thật:** nếu có, chỉ gửi tới người kiểm thử được phép và luôn gắn nhãn test.<br>**So sánh kênh:** hiển thị khác biệt về giới hạn nếu hỗ trợ nhiều nền tảng. |
+| Giao diện hệ thống | Khung xem trước thiết bị; bộ chọn nền tảng; nút **Xem thử**; bộ dữ liệu mẫu; điều khiển lựa chọn giả lập; dòng thời gian các bước; bảng lỗi/cảnh báo; nút kết thúc hoặc chạy lại. |
+| Yêu cầu phi chức năng | Bản xem trước phản hồi trong 100 mili giây trên thiết bị mục tiêu; dữ liệu thử được tách khỏi dữ liệu thật; thông tin cá nhân thật được che; phiên thử không làm tăng chỉ số hoặc kích hoạt quy tắc thực tế. |
+| AC tương ứng | - **AC-AUT-005-01:** Khi sửa nội dung, bản xem trước cập nhật nhưng bản đang áp dụng không đổi.<br>- **AC-AUT-005-02:** Khi chạy xem thử, hệ thống thể hiện đúng thứ tự và nhánh của bản nháp.<br>- **AC-AUT-005-03:** Nút/hành động trong xem thử không cập nhật nhãn, trường, menu hoặc kịch bản thật.<br>- **AC-AUT-005-04:** Sau phiên thử, báo cáo chỉ rõ bước thành công, bỏ qua và lỗi. |
+| BR tương ứng | - **BR-AUT-005-01:** Xem trước và xem thử luôn sử dụng phiên bản bản nháp được chọn.<br>- **BR-AUT-005-02:** Mọi tác động trong chế độ thử phải được tách riêng hoặc mô phỏng.<br>- **BR-AUT-005-03:** Dữ liệu thử nghiệm không được ghi vào thống kê thực tế.<br>- **BR-AUT-005-04:** Gửi thử trên kênh thật, nếu được hỗ trợ, chỉ dành cho đối tượng được cho phép và không thay thế việc xuất bản. |

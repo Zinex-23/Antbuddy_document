@@ -1,0 +1,16 @@
+# FR-AUT-031: Tự động thực hiện quy luật khi có sự kiện
+
+| Mục | Nội dung |
+| --- | --- |
+| Mô tả | Tiếp nhận sự kiện, tìm các quy luật đang bật, đánh giá điều kiện/tần suất và thực hiện hành động. Chức năng xử lý nhiều quy luật cùng khớp và ngăn quy luật tự kích hoạt hoặc kích hoạt lẫn nhau vô hạn. |
+| Đối tượng liên quan | **Khách hàng:** đối tượng của sự kiện/hành động.<br>**Hệ thống:** đánh giá, điều phối và chống lặp.<br>**Người quản trị:** xem lịch sử thực hiện. |
+| Pre-conditions | Sự kiện xác định được doanh nghiệp/kênh/khách; có quy luật đang bật; dữ liệu sự kiện hợp lệ; chức năng hành động khả dụng. |
+| Điều kiện kích hoạt | Một sự kiện nghiệp vụ được phát sinh từ tương tác khách hoặc thay đổi dữ liệu đã được phê duyệt. |
+| Luồng xử lý chính | 1. Hệ thống xác thực và loại sự kiện lặp.<br>2. Hệ thống tìm tất cả quy luật đang bật có sự kiện phù hợp.<br>3. Với từng quy luật, hệ thống đánh giá điều kiện và tần suất; không đạt thì ghi lý do bỏ qua.<br>4. Các quy luật đạt được xếp theo chính sách đã xác nhận và có thể thực hiện độc lập.<br>5. Hệ thống chạy hành động tuần tự theo FR-AUT-030 và lưu kết quả từng hành động.<br>6. Sự kiện phát sinh từ hành động giữ dấu vết chuỗi để chặn vòng lặp. |
+| Post-condition | Mỗi quy luật phù hợp có kết quả thành công, một phần, thất bại hoặc bỏ qua; không có chuỗi kích hoạt vô hạn. |
+| Luồng thay thế | - Sự kiện lặp/sai cấu trúc: không tạo lần thực hiện thứ hai hoặc hành động mập mờ.<br>- Quy luật bị tắt giữa lúc chạy: không bắt đầu hành động tiếp theo.<br>- Hai quy luật cùng khớp: chạy theo chính sách độc lập/thứ tự đã xác nhận.<br>- Phát hiện cùng quy luật trong cùng chuỗi/khách: bỏ qua và ghi vòng lặp.<br>- Chuỗi vượt độ sâu/thời gian: dừng và cảnh báo. |
+| Sub-flow | **[Cần xác nhận]**: nhiều quy luật cùng khớp chạy song song hay theo thứ tự; chính sách xung đột; giới hạn độ sâu.<br>**Chống vòng lặp:** cùng quy luật không chạy lại cho cùng khách trong cùng chuỗi nguyên nhân.<br>**Chống trùng:** cùng sự kiện + quy luật + phiên bản có tối đa một lần thực hiện. |
+| Giao diện hệ thống | Nhật ký có sự kiện nguồn, quy luật, điều kiện, tần suất, hành động, trạng thái/lý do; liên kết chuỗi nguyên nhân; cảnh báo vòng lặp và bộ lọc lỗi. |
+| Yêu cầu phi chức năng | Trong ít nhất 95% trường hợp, việc kiểm tra quy luật hoàn tất trong 200 mili giây trước khi gọi hệ thống ngoài; sự kiện có thể được nhận lại nhưng không tạo tác động trùng; hàng chờ và lỗi phải theo dõi được; dữ liệu nhạy cảm được che. |
+| AC tương ứng | - **AC-AUT-031-01:** Sự kiện đạt điều kiện/tần suất làm quy luật chạy đúng hành động và lưu kết quả.<br>- **AC-AUT-031-02:** Cùng sự kiện được giao lại không tạo lần thực hiện thứ hai.<br>- **AC-AUT-031-03:** Hai quy luật kích hoạt chéo không tạo vòng lặp vô hạn.<br>- **AC-AUT-031-04:** Nhiều quy luật cùng khớp được xử lý đúng chính sách và từng kết quả truy vết được. |
+| BR tương ứng | - **BR-AUT-031-01:** Mỗi sự kiện + quy luật + phiên bản chỉ có một lần thực hiện logic.<br>- **BR-AUT-031-02:** Một quy luật không chạy lại cho cùng khách trong cùng chuỗi nguyên nhân.<br>- **BR-AUT-031-03:** Nhiều quy luật cùng khớp không mặc nhiên loại nhau; cách thực hiện/xung đột phải được công bố.<br>- **BR-AUT-031-04:** Tắt/xóa quy luật không hoàn tác hành động đã hoàn tất. |

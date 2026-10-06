@@ -1,39 +1,39 @@
-# Ma trận sở hữu phạm vi
+# Ma trận phạm vi chức năng
 
-## 1. Owner theo năng lực
+Ma trận này giúp xác định chức năng nào chịu trách nhiệm khi một yêu cầu liên quan nhiều phần. “Chịu trách nhiệm” nghĩa là chức năng thực sự thay đổi dữ liệu hoặc quyết định nghiệp vụ; “phối hợp” chỉ gửi yêu cầu hoặc dùng kết quả.
 
-| Năng lực/dữ liệu | FR Owner | Consumer | Ranh giới không được vượt |
+| Công việc | Chức năng chịu trách nhiệm | Chức năng phối hợp | Giới hạn phạm vi |
 | --- | --- | --- | --- |
-| Menu fallback duy nhất, item của Menu mặc định và publish | FR-001 | FR-002, 008 | Không quản lý gán menu riêng hoặc item của Menu tùy chỉnh |
-| Catalog Menu tùy chỉnh, item của Menu tùy chỉnh, customer–menu assignment | FR-002 | FR-008 | Không sửa Menu mặc định; chỉ dùng chung contract item/action |
-| FAQ item, thứ tự, click | FR-003 | FR-011 | Không xử lý text tự do |
-| Cấu hình và send-attempt đầu phiên | FR-004 | FR-011 | Không định nghĩa session vòng đời khác |
-| Keyword catalog, matcher, winner, response | FR-005 | FR-008, 011 | Không xử lý câu trả lời form |
-| Tag catalog, membership, add/remove command | FR-006 | FR-007, 008, 011 | Không sở hữu User Field |
-| Sequence, step, enrollment, schedule | FR-007 | FR-008, 011 | Không sở hữu action đích |
-| Rule, trigger, condition, action orchestration | FR-008 | FR-011 | Không định nghĩa lại nghiệp vụ action |
-| Update job, mapping, transform, field-write result | FR-009 | FR-008, 010, 011 | Không quản lý hội thoại hỏi–đáp |
-| Form, question, capture session, validation | FR-010 | FR-008, 011 | Không quản lý schema User Field |
-| Metric dictionary, fact, aggregation, export | FR-011 | Tất cả FR chỉ phát event | Không thay đổi dữ liệu nghiệp vụ nguồn |
-| Fallback config, cooldown reservation và delivery attempt | FR-012 | FR-011 | Chỉ chạy với `message.unhandled`; không thay Keyword, NLU hoặc Form |
+| Cấu hình và hiển thị menu dùng khi khách không có menu riêng | FR-AUT-001 | FR-AUT-002, FR-AUT-008 | Không quản lý việc gán Menu tùy chỉnh |
+| Quản lý Menu tùy chỉnh và gán/gỡ menu cho khách | FR-AUT-002 | FR-AUT-001, FR-AUT-008 | Không sửa Menu mặc định; tạo menu không tự gán cho khách |
+| Quản lý câu hỏi gợi ý và xử lý khi khách bấm | FR-AUT-003 | FR-AUT-011 | Không dò nội dung khách tự nhập |
+| Cấu hình và gửi lời chào khi bắt đầu phiên | FR-AUT-004 | FR-AUT-011 | Không định nghĩa toàn bộ vòng đời phiên; không dùng như phản hồi khi bot không hiểu |
+| Dò từ khóa, chọn một quy tắc và phản hồi | FR-AUT-005 | FR-AUT-008, FR-AUT-011 | Không xử lý câu trả lời khi FR-AUT-010 đang chờ |
+| Tạo nhãn và gắn/gỡ nhãn cho khách | FR-AUT-006 | FR-AUT-007, FR-AUT-008, FR-AUT-011 | Không quản lý User Field; nhãn không tự đăng ký kịch bản nếu không có quy tắc |
+| Quản lý chuỗi bước và khách tham gia theo thời gian | FR-AUT-007 | FR-AUT-008, FR-AUT-011 | Không tự sửa dữ liệu của hành động đích |
+| Đánh giá KHI – NẾU – THÌ và điều phối hành động | FR-AUT-008 | FR-AUT-001/002/006/007/009/011 | Không tự ghi menu, nhãn, User Field hoặc trạng thái tham gia kịch bản |
+| Chuyển đổi và cập nhật User Field | FR-AUT-009 | FR-AUT-008, FR-AUT-010, FR-AUT-011 | Không thiết kế hội thoại hỏi đáp; không tạo định nghĩa trường |
+| Hỏi, kiểm tra và ghi nhận câu trả lời | FR-AUT-010 | FR-AUT-005, FR-AUT-009, FR-AUT-011 | Không tự định nghĩa hoặc ghi trực tiếp cấu trúc User Field |
+| Định nghĩa chỉ số, tổng hợp và xuất báo cáo | FR-AUT-011 | Tất cả FR cung cấp kết quả | Không thay đổi dữ liệu nghiệp vụ nguồn; “đặt lại” không xóa lịch sử |
+| Gửi phản hồi dự phòng và kiểm soát khoảng nghỉ | FR-AUT-012 | FR-AUT-005, FR-AUT-010, AI/kỹ năng, FR-AUT-011 | Chỉ chạy sau khi các chức năng ưu tiên không xử lý; không thay Từ khóa, AI hoặc biểu mẫu |
 
-## 2. Phân biệt các cặp dễ chồng lấn
+## Các ranh giới dễ nhầm
 
-| Cặp | Quyết định phân ranh |
+| Công việc cần phân biệt | Cách phân định |
 | --- | --- |
-| Menu mặc định / Menu tùy chỉnh | FR-001 sở hữu fallback singleton. FR-002 sở hữu catalog menu riêng và assignment. Resolver ưu tiên assignment hợp lệ, nếu không thì trả Menu mặc định. |
-| Từ khóa / Thu thập thông tin | Khi capture session đang `WAITING`, FR-010 độc quyền nhận tin nhắn; FR-005 không match cùng input. |
-| Quy tắc / Tự động cập nhật User Field | FR-008 quyết định khi nào gọi action. FR-009 quyết định map/transform/validate/write và xử lý xung đột. |
-| Thu thập thông tin / User Field | FR-010 thu và validate câu trả lời theo câu hỏi; sau đó gọi command do FR-009 cung cấp. |
-| Nhãn / User Field | Nhãn là membership nhiều–nhiều dùng phân nhóm. User Field là giá trị có kiểu theo schema. Không dùng nhãn thay field hoặc ngược lại. |
-| Kịch bản / Quy tắc | Kịch bản thực thi nhiều bước theo timeline sau ghi danh. Quy tắc phản ứng event và điều phối action tức thời. |
-| Thống kê / FR nguồn | FR nguồn phát event bất biến. FR-011 định nghĩa cách khử trùng, attribution và hiển thị; không ghi ngược vào FR nguồn. |
-| Từ khóa / Tin nhắn mặc định | FR-005 chọn winner trước. FR-012 chỉ nhận `message.unhandled` sau khi Keyword, NLU và handler ưu tiên đều không xử lý. |
+| Menu mặc định và Menu tùy chỉnh | FR-AUT-002 cung cấp menu riêng nếu khách được gán hợp lệ; nếu không, FR-AUT-001 cung cấp Menu mặc định. |
+| Từ khóa và Thu thập thông tin | Khi đang chờ câu trả lời, FR-AUT-010 nhận tin trước; FR-AUT-005 không phản hồi cùng tin. |
+| Quy tắc và Cập nhật User Field | FR-AUT-008 quyết định khi nào yêu cầu cập nhật; FR-AUT-009 kiểm tra và ghi giá trị. |
+| Thu thập thông tin và User Field | FR-AUT-010 hỏi và kiểm tra câu trả lời; FR-AUT-009 lưu giá trị vào hồ sơ. |
+| Nhãn và User Field | Nhãn dùng để phân nhóm và một khách có thể có nhiều nhãn; User Field là một giá trị có kiểu trong hồ sơ. |
+| Kịch bản và Quy tắc | Kịch bản chạy nhiều bước theo thời gian sau khi đăng ký; Quy tắc phản ứng với một tình huống và gọi hành động. |
+| Số liệu và chức năng nguồn | Chức năng nguồn tạo kết quả; FR-AUT-011 tính và hiển thị nhưng không sửa lại kết quả nguồn. |
+| Từ khóa và Tin nhắn mặc định | Từ khóa được kiểm tra trước; phản hồi dự phòng chỉ được xét khi Từ khóa, AI và các chức năng ưu tiên đều không xử lý. |
 
-## 3. Quy tắc tiếp nhận yêu cầu mới
+## Tiếp nhận yêu cầu mới
 
-1. Xác định dữ liệu hoặc state bị thay đổi.
-2. Chọn đúng Owner theo bảng trên.
-3. BR và AC chính chỉ viết tại Owner; Consumer ghi dependency/input/output.
-4. Nếu một transaction chạm nhiều Owner, dùng command/event và `correlationId`, không truy cập trực tiếp bảng dữ liệu của nhau.
-5. Năng lực mới không khớp Owner nào phải tạo FR mới, không nhét vào FR gần tên nhất.
+1. Xác định dữ liệu nào sẽ thay đổi và kết quả người dùng mong đợi.
+2. Chọn chức năng chịu trách nhiệm theo bảng trên.
+3. Viết quy tắc và tiêu chí nghiệm thu chính tại chức năng chịu trách nhiệm; chức năng phối hợp chỉ mô tả đầu vào, đầu ra và ảnh hưởng.
+4. Nếu một yêu cầu chạm nhiều chức năng, mỗi chức năng vẫn tự chịu trách nhiệm với dữ liệu của mình và phải có mã liên kết để truy vết cùng một lần xử lý.
+5. Năng lực không thuộc phạm vi nào cần một FR mới, không ghép vào FR chỉ vì tên gần giống.

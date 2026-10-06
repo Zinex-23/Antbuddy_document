@@ -1,0 +1,16 @@
+# FR-AUT-015: Tự động gửi tin nhắn mở đầu
+
+| Mục | Nội dung |
+| --- | --- |
+| Mô tả | Xác định khách nào nhận lời chào, thời điểm gửi và giới hạn gửi lại. Tin nhắn mở đầu phản ứng với việc bắt đầu hội thoại/phiên theo định nghĩa sản phẩm; không dùng khi bot không hiểu tin nhắn. |
+| Đối tượng liên quan | **Khách hàng:** bắt đầu tương tác và nhận lời chào.<br>**Hệ thống:** nhận biết sự kiện, kiểm tra điều kiện và chống gửi trùng.<br>**Nhân viên:** có thể tiếp quản khiến bot không gửi. |
+| Pre-conditions | FR-AUT-014 đã áp dụng và đang bật; kênh kết nối; khách thuộc đối tượng nhận; bot không tạm dừng hoặc do nhân viên tiếp quản. |
+| Điều kiện kích hoạt | Hệ thống nhận biết khách bắt đầu một hội thoại hoặc phiên mới theo định nghĩa đã được nghiệp vụ phê duyệt. |
+| Luồng xử lý chính | 1. Hệ thống nhận sự kiện bắt đầu và loại sự kiện lặp.<br>2. Hệ thống kiểm tra cấu hình, đối tượng nhận, chính sách kênh, trạng thái nhân viên tiếp quản hội thoại và lịch sử gửi của phiên.<br>3. Nếu đủ điều kiện, hệ thống đánh dấu phiên được phép gửi để ngăn gửi trùng.<br>4. Hệ thống gửi các bước của cấu hình và ghi trạng thái.<br>5. Tin đầu tiên của khách tiếp tục được xử lý hay chỉ dùng để mở phiên theo quyết định sản phẩm. |
+| Post-condition | Mỗi phiên đủ điều kiện có tối đa một lần gửi lời chào logic hoặc một lý do bỏ qua rõ ràng. |
+| Luồng thay thế | - Cấu hình tắt/chưa áp dụng/sai đối tượng: bỏ qua và ghi lý do.<br>- Nhân viên tiếp quản/bot tạm dừng: không gửi.<br>- Gửi lỗi tạm thời: kiểm tra kết quả rồi thử lại cùng lần gửi.<br>- Bản mới áp dụng sau khi phiên bắt đầu: không gửi bù cho phiên cũ.<br>- Thiếu biến bắt buộc: dùng giá trị dự phòng hoặc chặn gửi theo cấu hình. |
+| Sub-flow | **[Cần xác nhận]**: “bắt đầu phiên” là bấm Bắt đầu, tin đầu tiên hay quay lại sau thời gian im lặng; thời lượng phiên; cách xử lý tin đầu tiên sau lời chào; khóa chống gửi lại theo phiên hay theo khách.<br>**Đối soát:** tránh gửi hai lần khi kênh không phản hồi.<br>**Thống kê:** chuyển trạng thái cho FR-AUT-035. |
+| Giao diện hệ thống | Nhật ký gửi với khách, thời điểm, phiên bản, trạng thái và lý do bỏ qua; cấu hình định nghĩa phiên/đối tượng nhận nếu thuộc phạm vi màn FR-AUT-014. |
+| Yêu cầu phi chức năng | Trong ít nhất 95% trường hợp, hệ thống quyết định gửi trong 200 mili giây; cùng một sự kiện không tạo hai lời chào; yêu cầu gửi không bị mất khi dịch vụ gián đoạn; không ghi dữ liệu nhạy cảm vào nhật ký. |
+| AC tương ứng | - **AC-AUT-015-01:** Một phiên đủ điều kiện nhận đúng một lời chào dù sự kiện được giao lại.<br>- **AC-AUT-015-02:** Cấu hình tắt hoặc nhân viên tiếp quản làm hệ thống không gửi và ghi đúng lý do.<br>- **AC-AUT-015-03:** Áp dụng bản mới không gửi lại lời chào cho phiên đã bắt đầu.<br>- **AC-AUT-015-04:** Thử lại sau lỗi không tạo hai tin nhắn logic cho cùng phiên. |
+| BR tương ứng | - **BR-AUT-015-01:** Tin nhắn mở đầu chỉ chạy theo sự kiện bắt đầu phiên đã được định nghĩa.<br>- **BR-AUT-015-02:** Mỗi phiên đủ điều kiện chỉ được gửi lời chào một lần.<br>- **BR-AUT-015-03:** Khi nhân viên đã tiếp quản hội thoại hoặc bot đang tạm dừng, hệ thống không gửi lời chào.<br>- **BR-AUT-015-04:** Tin nhắn mở đầu không được dùng làm phản hồi dự phòng khi bot không hiểu. |
