@@ -9,7 +9,7 @@
 - Dùng câu ngắn, ưu tiên từ ngữ nghiệp vụ và hạn chế thuật ngữ kỹ thuật.
 - Mỗi FR giữ đúng 12 mục để có thể đưa vào tài liệu SRS.
 - AC mô tả kết quả có thể kiểm tra; BR mô tả quy tắc bắt buộc phải tuân theo.
-- Nội dung chưa có quyết định được đánh dấu **[Cần xác nhận]** và tổng hợp tại [Danh sách cần xác nhận](CAN_XAC_NHAN.md).
+- Toàn bộ 16 nội dung từng cần xác nhận đã được đóng và điền trực tiếp vào FR, AC, BR. Xem kết luận, mức evidence và nguồn đối chiếu tại [Kết quả xác nhận](CAN_XAC_NHAN.md).
 
 ## Danh mục FR
 
