@@ -17,6 +17,6 @@
 
 - Một quy tắc chỉ được định nghĩa một lần trong danh mục BR.
 - Một FR có đúng một AC, nhưng AC có thể kiểm chứng nhiều BR.
+- Cột FR của BR ghi toàn bộ phạm vi áp dụng; cột AC chỉ ghi tiêu chí kiểm chứng trực tiếp, nên số mã ở hai cột có thể khác nhau.
 - Khi kênh chat có giới hạn thấp hơn, luôn áp dụng giới hạn của kênh.
 - Không còn điểm mở trong bộ chuẩn hóa; thay đổi mới phải cập nhật đồng thời quyết định, BR và AC liên quan.
-
