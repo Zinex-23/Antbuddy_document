@@ -1,28 +1,22 @@
 # Bộ FR – AC – BR tách riêng
 
-> Ngày biên tập: 09/10/2026  
-> Nguồn: bộ 30 FR tại thư mục cha, CAN_XAC_NHAN.md, SRS Automation và checklist review đính kèm.
+> Ngày cập nhật: 09/10/2026.
 
-## Cấu trúc
+## Bộ nên dùng
 
-- FR/DANH_SACH_FR.md: chỉ liệt kê mã và tên 30 FR.
-- AC/: mỗi FR có một tài liệu Acceptance Criteria riêng.
-- BR/: mỗi FR có một tài liệu Business Rules riêng.
+- FR/DANH_SACH_FR_CHUAN_HOA.md: danh sách 30 FR và liên kết.
+- AC_CHUAN_HOA/: đúng 30 AC, mỗi FR có một AC end-to-end theo Given/When/Then/And.
+- BR_CHUAN_HOA/DANH_MUC_BR_AUT.md: 65 BR dùng chung, không lặp theo từng FR.
+- BR_CHUAN_HOA/QUYET_DINH_VA_NGUON.md: quyết định đã chốt, nguồn Botcake/SRS và phần nào là baseline BA.
 
-## Quy ước AC
+## Bộ lưu lịch sử
 
-Mỗi AC là một tình huống độc lập và luôn có đúng bốn phần:
+- AC/ và BR/ là bản cũ, chỉ dùng đối chiếu; không dùng làm nguồn nghiệm thu mới.
 
-| Mục | Nội dung |
-| --- | --- |
-| Given | Điều kiện ban đầu |
-| When | Hành động hoặc sự kiện |
-| Then | Kết quả chính quan sát được |
-| And | Kết quả bổ sung hoặc điều kiện không được vi phạm |
+## Nguyên tắc
 
-## Quy ước BR
-
-- Giữ các quy tắc có căn cứ từ bộ FR nguồn.
-- Nội dung chưa đủ căn cứ được ghi rõ **[CẦN XÁC NHẬN]** và không được dùng để viết AC khẳng định hành vi.
-- Không dùng tài liệu này để thay đổi các mục Mô tả, luồng xử lý, giao diện hoặc yêu cầu phi chức năng của FR nguồn.
+- Một quy tắc chỉ được định nghĩa một lần trong danh mục BR.
+- Một FR có đúng một AC, nhưng AC có thể kiểm chứng nhiều BR.
+- Khi kênh chat có giới hạn thấp hơn, luôn áp dụng giới hạn của kênh.
+- Không còn điểm mở trong bộ chuẩn hóa; thay đổi mới phải cập nhật đồng thời quyết định, BR và AC liên quan.
 
